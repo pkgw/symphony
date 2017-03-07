@@ -27,7 +27,8 @@ def compute_coefficient(
         gamma_min = 0.1,
         gamma_max = 1000.,
         gamma_cutoff = 1e7,
-        approximate = False
+        approximate = False,
+        eat_errors = False,
 ):
     """If you read the discussion in Pandya+2016, the Kappa distribution looks
     tempting, but I don't believe that anyone has computed Faraday
@@ -53,21 +54,26 @@ def compute_coefficient(
     else:
         raise ValueError ('unexpected value of "rttype": %r' % (rttype,))
 
-    result = func (
-        nu,
-        B,
-        ne,
-        theta,
-        symphonyPy.POWER_LAW,
-        stokes,
-        10., # Max/Jutt distribution: \Theta_e, dimensionless electron temperature
-        p,
-        gamma_min, # powerlaw distribution: gamma_min
-        gamma_max, # powerlaw distribution: gamma_max
-        gamma_cutoff, # powerlaw distribution: gamma_cutoff
-        3.5, # kappa distribution: kappa
-        10, # kappa distribution: kappa_width
-    )
+    try:
+        result = func (
+            nu,
+            B,
+            ne,
+            theta,
+            symphonyPy.POWER_LAW,
+            stokes,
+            10., # Max/Jutt distribution: \Theta_e, dimensionless electron temperature
+            p,
+            gamma_min, # powerlaw distribution: gamma_min
+            gamma_max, # powerlaw distribution: gamma_max
+            gamma_cutoff, # powerlaw distribution: gamma_cutoff
+            3.5, # kappa distribution: kappa
+            10, # kappa distribution: kappa_width
+            )
+    except RuntimeError as e:
+        if eat_errors:
+            return np.nan
+        raise
 
     return result
 
@@ -82,9 +88,10 @@ def compute_all_nontrivial(
         gamma_max = 1000.,
         gamma_cutoff = 1e7,
         approximate = False,
+        eat_errors = False,
 ):
     result = np.empty(6)
-    rest = (nu, B, ne, theta, p, gamma_min, gamma_max, gamma_cutoff, approximate)
+    rest = (nu, B, ne, theta, p, gamma_min, gamma_max, gamma_cutoff, approximate, eat_errors)
     result[0] = compute_coefficient(EMISSION, STOKES_I, *rest)
     result[1] = compute_coefficient(ABSORPTION, STOKES_I, *rest)
     result[2] = compute_coefficient(EMISSION, STOKES_Q, *rest)

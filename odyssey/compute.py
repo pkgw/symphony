@@ -56,7 +56,7 @@ def main():
         print('#', ' '.join(p.summary() for p in parameters), file=outfile)
 
         for i in xrange(n_calcs):
-            info = symphony.compute_all_nontrivial(*pvals[i])
+            info = symphony.compute_all_nontrivial(*pvals[i], eat_errors=True)
             vec = list(pvals[i]) + list(info)
             print('\t'.join('%g' % v for v in vec), file=outfile)
 
