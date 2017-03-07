@@ -12,6 +12,7 @@ __all__ = str ('''
 ''').split ()
 
 import os.path
+from collections import OrderedDict
 import numpy as np
 from keras import models, layers, optimizers
 
@@ -25,6 +26,8 @@ hardcoded_params = [
 ]
 
 hardcoded_n_results = 6
+
+config_path = os.path.join(os.path.dirname(__file__), 'nn_config.toml')
 
 
 class Mapping(object):
@@ -83,9 +86,103 @@ class Mapping(object):
         return norm
 
 
-class SampleData(object):
+    def to_dict(self):
+        d = OrderedDict()
+        d['name'] = self.name
+        d['negate'] = self.negate
+        d['is_log'] = self.is_log
+        d['mean'] = self.mean
+        d['std'] = self.std
+        d['phys_min'] = self.p_min
+        d['phys_max'] = self.p_max
+        return d
+
+
+    @classmethod
+    def from_dict(cls, info):
+        # Blah total hack to override constructor.
+        inst = cls('x', np.array([1., 2, 3]), False)
+        inst.name = str(info['name'])
+        inst.negate = bool(info['negate'])
+        inst.is_log = bool(info['is_log'])
+        inst.mean = float(info['mean'])
+        inst.std = float(info['std'])
+        inst.p_min = float(info['phys_min'])
+        inst.p_max = float(info['phys_max'])
+
+        # Figure out n_{min,max}. Do so manually just in case there ends up
+        # being bounds checking that will blow up if n_{min,max} are unset.
+        x = np.array([inst.p_min, inst.p_max])
+        if inst.negate:
+            x = -x
+        if inst.is_log:
+            x = np.log10(x)
+        x = (x - inst.mean) / inst.std
+
+        inst.n_min = x.min()
+        inst.n_max = x.max()
+
+        return inst
+
+
+class DomainRange(object):
     n_params = len(hardcoded_params)
     n_results = hardcoded_n_results
+    pmaps = None
+    rmaps = None
+
+    @classmethod
+    def from_samples(cls, phys_samples):
+        assert phys_samples.ndim == 2
+        assert phys_samples.shape[1] == (cls.n_params + cls.n_results)
+
+        inst = cls()
+        inst.pmaps = []
+        inst.rmaps = []
+
+        for i in xrange(inst.n_params):
+            inst.pmaps.append(Mapping(hardcoded_params[i][0], phys_samples[:,i], hardcoded_params[i][1]))
+
+        for i in xrange(inst.n_results):
+            inst.rmaps.append(Mapping('result%d' % i, phys_samples[:,i+inst.n_params], True))
+
+        return inst
+
+
+    @classmethod
+    def from_serialized(cls, info):
+        inst = cls()
+        inst.pmaps = []
+        inst.rmaps = []
+
+        for subinfo in info['params']:
+            inst.pmaps.append(Mapping.from_dict(subinfo))
+
+        for subinfo in info['results']:
+            inst.rmaps.append(Mapping.from_dict(subinfo))
+
+        assert len(inst.pmaps) == cls.n_params
+        assert len(inst.rmaps) == cls.n_results
+        return inst
+
+
+    def __repr__(self):
+        return '\n'.join(
+            ['<%s n_p=%d n_r=%d' % (self.__class__.__name__, self.n_params, self.n_results)] +
+            ['  P%d=%r,' % (i, m) for i, m in enumerate(self.pmaps)] +
+            ['  R%d=%r,' % (i, m) for i, m in enumerate(self.rmaps)] +
+            ['>'])
+
+
+    def into_info(self, info):
+        info['params'] = [m.to_dict() for m in self.pmaps]
+        info['results'] = [m.to_dict() for m in self.rmaps]
+
+
+class SampleData(object):
+    domain_range = None
+    phys = None
+    norm = None
 
     def __init__(self, dirname):
         chunks = []
@@ -98,30 +195,30 @@ class SampleData(object):
             if not c.size or c.ndim != 2:
                 continue
 
-            assert c.shape[1] == (self.n_params + self.n_results), '%s %r' % (item, c)
+            assert c.shape[1] == (DomainRange.n_params + DomainRange.n_results)
             chunks.append(c)
 
         self.phys = np.vstack(chunks)
 
-        # Sadly necessary postprocessing. 1. Sometimes Symphony gives alpha_V > 0;
+        # Sadly necessary postprocessing. 1. Sometimes Symphony gives {j,alpha}_V > 0;
         # this should never happen with the range of thetas we explore.
 
+        w = self.phys[:,9] >= 0
+        self.phys[w,9] = np.nan
         w = self.phys[:,10] >= 0
         self.phys[w,10] = np.nan
 
         # End of postprocessing.
 
-        self.pmaps = []
-        self.rmaps = []
+        self.domain_range = DomainRange.from_samples(self.phys)
         self.norm = np.empty_like(self.phys)
 
-        for i in xrange(self.n_params):
-            self.pmaps.append(Mapping(hardcoded_params[i][0], self.phys[:,i], hardcoded_params[i][1]))
-            self.norm[:,i] = self.pmaps[i].phys_to_norm(self.phys[:,i])
+        for i in xrange(self.domain_range.n_params):
+            self.norm[:,i] = self.domain_range.pmaps[i].phys_to_norm(self.phys[:,i])
 
-        for i in xrange(self.n_results):
-            self.rmaps.append(Mapping('result%d' % i, self.phys[:,i+self.n_params], True))
-            self.norm[:,i+self.n_params] = self.rmaps[i].phys_to_norm(self.phys[:,i+self.n_params])
+        for i in xrange(self.domain_range.n_results):
+            j = i + self.domain_range.n_params
+            self.norm[:,j] = self.domain_range.rmaps[i].phys_to_norm(self.phys[:,j])
 
     @property
     def phys_params(self):
@@ -144,12 +241,18 @@ class NSModel(models.Sequential):
     """Neuro-Symphony Model -- just keras.models.Sequential extended with some
     helpers specific to our data structures.
 
+    If initialized with `data`, a `SampleData` instance, you can train the
+    neural net. Otherwise, you can just provide a `DomainRange` instance,
+    which will fix how the input and output variables ("parameters" and
+    "results") are normalized inside the neural net.
+
     """
-    def __init__(self, data, result_index):
+    def __init__(self, result_index, domain_range, data=None):
         super(NSModel, self).__init__()
-        self.data = data
         self.result_index = int(result_index)
-        assert self.result_index < self.data.n_results
+        self.domain_range = data.domain
+        self.data = data
+        assert self.result_index < self.domain_range.n_results
 
 
     def ns_fit(self, **kwargs):
@@ -195,7 +298,7 @@ class NSModel(models.Sequential):
             npred = npred[ok]
 
         if to_phys:
-            pred = self.data.rmaps[self.result_index].norm_to_phys(npred)
+            pred = self.domain_range.rmaps[self.result_index].norm_to_phys(npred)
         else:
             pred = npred
 
