@@ -103,6 +103,14 @@ class SampleData(object):
 
         self.phys = np.vstack(chunks)
 
+        # Sadly necessary postprocessing. 1. Sometimes Symphony gives alpha_V > 0;
+        # this should never happen with the range of thetas we explore.
+
+        w = self.phys[:,10] >= 0
+        self.phys[w,10] = np.nan
+
+        # End of postprocessing.
+
         self.pmaps = []
         self.rmaps = []
         self.norm = np.empty_like(self.phys)
@@ -112,7 +120,7 @@ class SampleData(object):
             self.norm[:,i] = self.pmaps[i].phys_to_norm(self.phys[:,i])
 
         for i in xrange(self.n_results):
-            self.rmaps.append(Mapping('param%d' % i, self.phys[:,i+self.n_params], True))
+            self.rmaps.append(Mapping('result%d' % i, self.phys[:,i+self.n_params], True))
             self.norm[:,i+self.n_params] = self.rmaps[i].phys_to_norm(self.phys[:,i+self.n_params])
 
     @property
