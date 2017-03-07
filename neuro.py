@@ -226,3 +226,20 @@ class NSModel(models.Sequential):
         self.data.phys[bad,self.data.n_params+self.result_index] = np.nan
         self.data.norm[bad,self.data.n_params+self.result_index] = np.nan
         return bad.sum()
+
+
+    def ns_plot(self, param_index, plot_err=False, to_phys=False, thin=100):
+        """Make a diagnostic plot comparing the approximation to the "actual" results
+        from Symphony."""
+        import omega as om
+
+        par, act, nn = self.ns_validate(filter=True, to_phys=to_phys)
+
+        if plot_err:
+            err = nn - act
+            p = om.quickXY(par[::thin,param_index], err[::thin], 'Error', lines=0)
+        else:
+            p = om.quickXY(par[::thin,param_index], act[::thin], 'Full calc', lines=0)
+            p.addXY(par[::thin,param_index], nn[::thin], 'Neural', lines=0)
+
+        return p
