@@ -145,6 +145,10 @@ class NSModel(models.Sequential):
 
 
     def ns_fit(self, **kwargs):
+        """Train this ANN model on the data in `self.data`. This function just
+        takes care of extracting the right parameter and avoiding NaNs.
+
+        """
         nres = self.data.norm_results[:,self.result_index]
         ok = np.isfinite(nres)
         nres = nres[ok].reshape((-1, 1))
@@ -153,6 +157,20 @@ class NSModel(models.Sequential):
 
 
     def ns_validate(self, filter=True, to_phys=True):
+        """Test this network by having it predict all of the values in our
+        training sample. Returns `(params, actual, nn)`, where `params` is
+        shape `(N, self.data.n_params)` and is the input parameters, `actual`
+        is shape `(N,)` and is the actual values returned by Symphony, and
+        `nn` is shape `(N,)` and is the values predicted by the neural net.
+
+        If `filter` is true, the results will be filtered such that neither
+        `actual` nor `nn` contain non-finite values.
+
+        If `to_phys` is true, the values will be returned in the physical
+        coordinate system. Otherwise they will be returned in the normalized
+        coordinate system.
+
+        """
         if to_phys:
             par = self.data.phys_params
             res = self.data.phys_results[:,self.result_index]
@@ -174,3 +192,29 @@ class NSModel(models.Sequential):
             pred = npred
 
         return par, res, pred
+
+
+    def ns_sigma_clip(self, n_norm_sigma):
+        """Assuming that self is already a decent approximation of the input data,
+        try to improve things by NaN-ing out any measurements that are extremely
+        discrepant with our approximation -- under the assumption that these are
+        cases where Symphony went haywise.
+
+        Note that this destructively modifies `self.data`.
+
+        `n_norm_sigma` is the threshold above which discrepant values are
+        flagged. It is evaluated using the differences between the neural net
+        prediction and the training data in the *normalized* coordinate
+        system.
+
+        Returns the number of flagged points.
+        """
+        nres = self.data.norm_results[:,self.result_index]
+        npred = self.predict(self.data.norm_params)[:,0]
+        err = npred - nres
+        m = np.nanmean(err)
+        s = np.nanstd(err)
+        bad = (np.abs((err - m) / s) > n_norm_sigma)
+        self.data.phys[bad,self.data.n_params+self.result_index] = np.nan
+        self.data.norm[bad,self.data.n_params+self.result_index] = np.nan
+        return bad.sum()
