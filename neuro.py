@@ -166,6 +166,16 @@ class DomainRange(object):
         return inst
 
 
+    @classmethod
+    def from_config(cls):
+        import pytoml
+
+        with open(config_path) as f:
+            cfg = pytoml.load(f)
+
+        return cls.from_serialized(cfg)
+
+
     def __repr__(self):
         return '\n'.join(
             ['<%s n_p=%d n_r=%d' % (self.__class__.__name__, self.n_params, self.n_results)] +
@@ -222,19 +232,19 @@ class SampleData(object):
 
     @property
     def phys_params(self):
-        return self.phys[:,:self.n_params]
+        return self.phys[:,:self.domain_range.n_params]
 
     @property
     def phys_results(self):
-        return self.phys[:,self.n_params:]
+        return self.phys[:,self.domain_range.n_params:]
 
     @property
     def norm_params(self):
-        return self.norm[:,:self.n_params]
+        return self.norm[:,:self.domain_range.n_params]
 
     @property
     def norm_results(self):
-        return self.norm[:,self.n_params:]
+        return self.norm[:,self.domain_range.n_params:]
 
 
 class NSModel(models.Sequential):
@@ -250,7 +260,7 @@ class NSModel(models.Sequential):
     def __init__(self, result_index, domain_range, data=None):
         super(NSModel, self).__init__()
         self.result_index = int(result_index)
-        self.domain_range = data.domain
+        self.domain_range = data.domain_range
         self.data = data
         assert self.result_index < self.domain_range.n_results
 
@@ -326,8 +336,8 @@ class NSModel(models.Sequential):
         m = np.nanmean(err)
         s = np.nanstd(err)
         bad = (np.abs((err - m) / s) > n_norm_sigma)
-        self.data.phys[bad,self.data.n_params+self.result_index] = np.nan
-        self.data.norm[bad,self.data.n_params+self.result_index] = np.nan
+        self.data.phys[bad,self.domain_range.n_params+self.result_index] = np.nan
+        self.data.norm[bad,self.domain_range.n_params+self.result_index] = np.nan
         return bad.sum()
 
 
