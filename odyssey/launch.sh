@@ -3,6 +3,7 @@
 if [ "$1" = test ] ; then
     array_spec=0-1
     time_lim=1
+    set -x
 elif [ "$1" = prod ] ; then
     array_spec=0-1023
     time_lim=60
@@ -22,4 +23,4 @@ exec sbatch \
     -t $time_lim \
     -o '%A.log' \
     --open-mode=append \
-    ./runner.sh
+    $(dirname $0)/runner.sh $(cd $(dirname $0) && pwd)
