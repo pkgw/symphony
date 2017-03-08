@@ -200,17 +200,18 @@ trainers = {
 }
 
 
-def load_data_and_train(datadir, ctype, stokes):
+def load_data_and_train(datadir, rttype, stokes):
     dr = neuro.DomainRange.from_config()
     sd = neuro.SampleData(datadir)
     sd.dr = dr
 
     try:
-        result_index, func = trainers[ctype, stokes]
+        result_index, func = trainers[rttype, stokes]
     except:
-        raise Exception('no training info for ctype=%r, stoke=%r' % (args.ctype, args.stokes))
+        raise Exception('no training info for rttype=%r, stoke=%r' % (args.rttype, args.stokes))
 
-    m = neuro.NSModel(result_index, dr, sd)
+    m = neuro.NSModel()
+    m.ns_setup(result_index, sd)
     t0 = time.time()
     func(m)
     m.training_wall_clock = time.time() - t0
@@ -235,8 +236,8 @@ def make_parser():
                     help='If plotting, plot residuals rather than absolute values.')
     ap.add_argument('datadir', type=str, metavar='DATADIR',
                     help='The path to the sample data directory.')
-    ap.add_argument('ctype', type=str, metavar='CTYPE',
-                    help='The coefficient type: j or alpha.')
+    ap.add_argument('rttype', type=str, metavar='RTTYPE',
+                    help='The RT coefficient type: j or alpha.')
     ap.add_argument('stokes', type=str, metavar='STOKES',
                     help='The Stokes parameter: i q or v.')
     return ap
@@ -244,14 +245,14 @@ def make_parser():
 
 def main():
     args = make_parser().parse_args()
-    m = load_data_and_train(args.datadir, args.ctype, args.stokes)
+    m = load_data_and_train(args.datadir, args.rttype, args.stokes)
     print('Achieved MSE of %g in %.1f seconds for %s %s.' %
-          (m.final_mse, m.training_wall_clock, args.ctype, args.stokes))
+          (m.final_mse, m.training_wall_clock, args.rttype, args.stokes))
 
     if args.plot:
         page_results(m, residuals=args.residuals)
 
-    m.save('%s_%s.h5' % (args.ctype, args.stokes), overwrite=True)
+    m.save('%s_%s.h5' % (args.rttype, args.stokes), overwrite=True)
 
 
 if __name__ == '__main__':

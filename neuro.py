@@ -14,6 +14,7 @@ __all__ = str ('''
 import os.path
 from collections import OrderedDict
 import numpy as np
+from pwkit.numutil import broadcastize
 from keras import models, layers, optimizers
 
 
@@ -249,20 +250,19 @@ class SampleData(object):
 
 class NSModel(models.Sequential):
     """Neuro-Symphony Model -- just keras.models.Sequential extended with some
-    helpers specific to our data structures.
-
-    If initialized with `data`, a `SampleData` instance, you can train the
-    neural net. Otherwise, you can just provide a `DomainRange` instance,
-    which will fix how the input and output variables ("parameters" and
-    "results") are normalized inside the neural net.
+    helpers specific to our data structures. If you run the `ns_setup` method
+    you can train the neural net in our system.
 
     """
-    def __init__(self, result_index, domain_range, data=None):
-        super(NSModel, self).__init__()
+    # NOTE: __init__() must take no arguments in order for keras to be able to
+    # deserialize NSModels from the HDF5 format.
+
+    def ns_setup(self, result_index, data):
         self.result_index = int(result_index)
         self.domain_range = data.domain_range
         self.data = data
         assert self.result_index < self.domain_range.n_results
+        return self # convenience
 
 
     def ns_fit(self, **kwargs):
@@ -356,3 +356,97 @@ class NSModel(models.Sequential):
             p.addXY(par[::thin,param_index], nn[::thin], 'Neural', lines=0)
 
         return p
+
+
+class ApproximateSymphony(object):
+    def __init__(self, domain_range, model_dir):
+        self.domain_range = domain_range
+
+        self.models = []
+
+        for stokes in 'iqv':
+            for rttype in ('j', 'alpha'):
+                m = models.load_model(os.path.join(model_dir, '%s_%s.h5' % (rttype, stokes)),
+                                      custom_objects = {'NSModel': NSModel})
+                m.result_index = len(self.models)
+                m.domain_range = domain_range
+                self.models.append(m)
+
+        from . import STOKES_I, STOKES_Q, STOKES_U, STOKES_V, EMISSION, ABSORPTION
+
+        self._map = {
+            (EMISSION, STOKES_I): self.models[0],
+            (ABSORPTION, STOKES_I): self.models[1],
+            (EMISSION, STOKES_Q): self.models[2],
+            (ABSORPTION, STOKES_Q): self.models[3],
+            (EMISSION, STOKES_U): None,
+            (ABSORPTION, STOKES_U): None,
+            (EMISSION, STOKES_V): self.models[4],
+            (ABSORPTION, STOKES_V): self.models[5],
+        }
+
+
+    @broadcastize(5)
+    def compute_one(self, nu, B, ne, theta, p, rttype, stokes):
+        from . import STOKES_V
+        model = self._map[rttype, stokes]
+
+        if model is None:
+            return np.zeros(nu.shape)
+
+        if stokes == STOKES_V:
+            # XXX we are paranoid and assume that theta could take on any
+            # value ... even though we do no bounds-checking for whether the
+            # inputs overlap the region where we trained the neural net.
+            theta = theta % (2 * np.pi)
+            w = (theta > np.pi)
+            theta[w] = 2 * np.pi - theta[w]
+            flip = (theta > 0.5 * np.pi)
+            theta[flip] = np.pi - theta[flip]
+
+        phys = [nu, B, ne, theta, p]
+        npar = 5
+
+        norm = np.empty(nu.shape + (npar,))
+        for i in xrange(npar):
+            norm[...,i] = self.domain_range.pmaps[i].phys_to_norm(phys[i])
+
+        result = model.predict(norm)[...,0]
+        result = self.domain_range.rmaps[model.result_index].norm_to_phys(result)
+
+        if stokes == STOKES_V:
+            result[flip] = -result[flip]
+
+        return result
+
+
+    @broadcastize(5, ret_spec=None)
+    def compute_all_nontrivial(self, nu, B, ne, theta, p):
+        # XXX we are paranoid and assume that theta could take on any value
+        # ... even though we do no bounds-checking for whether the inputs
+        # overlap the region where we trained the neural net.
+        theta = theta % (2 * np.pi)
+        w = (theta > np.pi)
+        theta[w] = 2 * np.pi - theta[w]
+        flip = (theta > 0.5 * np.pi)
+        theta[flip] = np.pi - theta[flip]
+
+        # Normalize inputs.
+
+        phys = [nu, B, ne, theta, p]
+        npar = 5
+        norm = np.empty(nu.shape + (npar,))
+        for i in xrange(npar):
+            norm[...,i] = self.domain_range.pmaps[i].phys_to_norm(phys[i])
+
+        # Compute outputs.
+
+        result = np.empty(nu.shape + (self.domain_range.n_results,))
+        for i in xrange(self.domain_range.n_results):
+            r = self.models[i].predict(norm)[...,0]
+            result[...,i] = self.domain_range.rmaps[i].norm_to_phys(r)
+
+        # Stokes V normalization.
+
+        result[flip,4:6] = -result[flip,4:6]
+        return result
