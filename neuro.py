@@ -413,6 +413,7 @@ class ApproximateSymphony(object):
 
         result = model.predict(norm)[...,0]
         result = self.domain_range.rmaps[model.result_index].norm_to_phys(result)
+        result[ne == 0.] = 0.
 
         if stokes == STOKES_V:
             result[flip] = -result[flip]
@@ -446,7 +447,8 @@ class ApproximateSymphony(object):
             r = self.models[i].predict(norm)[...,0]
             result[...,i] = self.domain_range.rmaps[i].norm_to_phys(r)
 
-        # Stokes V normalization.
+        # Physics-y touchups.
 
+        result[ne == 0.] = 0.
         result[flip,4:6] = -result[flip,4:6]
         return result
