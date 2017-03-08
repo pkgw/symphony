@@ -16,9 +16,154 @@ from keras.layers import Dense
 from symphony import neuro
 
 
+def train_j_i(m):
+    m.add(Dense(
+        output_dim = 300,
+        input_dim = m.domain_range.n_params,
+        activation = 'relu',
+        init = 'normal',
+    ))
+    m.add(Dense(
+        output_dim = 1,
+        activation = 'linear',
+        init = 'normal',
+    ))
+    m.compile('adam', 'mse')
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    print('Intermediate MSE:', hist.history['loss'][-1])
+    m.ns_sigma_clip(7)
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    m.final_mse = hist.history['loss'][-1]
+    return m
+
+
+def train_alpha_i(m):
+    m.add(Dense(
+        output_dim = 300,
+        input_dim = m.domain_range.n_params,
+        activation = 'relu',
+        init = 'normal',
+    ))
+    m.add(Dense(
+        output_dim = 1,
+        activation = 'linear',
+        init = 'normal',
+    ))
+    m.compile('adam', 'mse')
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    print('Intermediate MSE:', hist.history['loss'][-1])
+    m.ns_sigma_clip(7)
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    m.final_mse = hist.history['loss'][-1]
+    return m
+
+
+def train_j_q(m):
+    m.add(Dense(
+        output_dim = 300,
+        input_dim = m.domain_range.n_params,
+        activation = 'relu',
+        init = 'normal',
+    ))
+    m.add(Dense(
+        output_dim = 1,
+        activation = 'linear',
+        init = 'normal',
+    ))
+    m.compile('adam', 'mse')
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    print('Intermediate MSE:', hist.history['loss'][-1])
+    m.ns_sigma_clip(7)
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    m.final_mse = hist.history['loss'][-1]
+    return m
+
+
+def train_alpha_q(m):
+    m.add(Dense(
+        output_dim = 300,
+        input_dim = m.domain_range.n_params,
+        activation = 'relu',
+        init = 'normal',
+    ))
+    m.add(Dense(
+        output_dim = 1,
+        activation = 'linear',
+        init = 'normal',
+    ))
+    m.compile('adam', 'mse')
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    print('Intermediate MSE:', hist.history['loss'][-1])
+    m.ns_sigma_clip(7)
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    m.final_mse = hist.history['loss'][-1]
+    return m
+
+
+def train_j_v(m):
+    m.add(Dense(
+        output_dim = 300,
+        input_dim = m.domain_range.n_params,
+        activation = 'relu',
+        init = 'normal',
+    ))
+    m.add(Dense(
+        output_dim = 1,
+        activation = 'linear',
+        init = 'normal',
+    ))
+    m.compile('adam', 'mse')
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    print('Intermediate MSE:', hist.history['loss'][-1])
+    m.ns_sigma_clip(7)
+    hist = m.ns_fit(
+        nb_epoch = 30,
+        batch_size = 2000,
+        verbose = 0,
+    )
+    m.final_mse = hist.history['loss'][-1]
+    return m
+
+
 def train_alpha_v(m):
     m.add(Dense(
-        output_dim = 128,
+        output_dim = 300,
         input_dim = m.domain_range.n_params,
         activation = 'relu',
         init = 'normal',
@@ -46,6 +191,11 @@ def train_alpha_v(m):
 
 
 trainers = {
+    ('j', 'i'): (0, train_j_i),
+    ('alpha', 'i'): (1, train_alpha_i),
+    ('j', 'q'): (2, train_j_q),
+    ('alpha', 'q'): (3, train_alpha_q),
+    ('j', 'v'): (4, train_j_v),
     ('alpha', 'v'): (5, train_alpha_v),
 }
 
