@@ -34,6 +34,9 @@ def compute_coefficient(
     tempting, but I don't believe that anyone has computed Faraday
     coefficients for it.
 
+    The approximate fitting formulae perform VERY badly if gamma_min <~ 1, it
+    seems.
+
     """
     if ne == 0:
         # My code sometimes tries to get coefficients with n_e = p = 0, which
