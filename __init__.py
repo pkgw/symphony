@@ -21,7 +21,7 @@ def compute_coefficient(
         stokes = STOKES_I,
         nu = 1e9, # you'll almost always want to override these but named params are nice.
         B = 100.,
-        ne = 1e3,
+        n_e = 1e3,
         theta = 1.,
         p = 2.,
         gamma_min = 0.1,
@@ -38,7 +38,7 @@ def compute_coefficient(
     seems.
 
     """
-    if ne == 0:
+    if n_e == 0:
         # My code sometimes tries to get coefficients with n_e = p = 0, which
         # makes symphony barf; fortunately, if there's nothing there we know
         # exactly what every radiative transfer coefficient is:
@@ -61,7 +61,7 @@ def compute_coefficient(
         result = func (
             nu,
             B,
-            ne,
+            n_e,
             theta,
             symphonyPy.POWER_LAW,
             stokes,
@@ -84,7 +84,7 @@ def compute_coefficient(
 def compute_all_nontrivial(
         nu = 1e9, # you'll almost always want to override these but named params are nice.
         B = 100.,
-        ne = 1e3,
+        n_e = 1e3,
         theta = 1.,
         p = 2.,
         gamma_min = 0.1,
@@ -94,7 +94,7 @@ def compute_all_nontrivial(
         eat_errors = False,
 ):
     result = np.empty(6)
-    rest = (nu, B, ne, theta, p, gamma_min, gamma_max, gamma_cutoff, approximate, eat_errors)
+    rest = (nu, B, n_e, theta, p, gamma_min, gamma_max, gamma_cutoff, approximate, eat_errors)
     result[0] = compute_coefficient(EMISSION, STOKES_I, *rest)
     result[1] = compute_coefficient(ABSORPTION, STOKES_I, *rest)
     result[2] = compute_coefficient(EMISSION, STOKES_Q, *rest)

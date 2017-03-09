@@ -21,7 +21,7 @@ from keras import models, layers, optimizers
 hardcoded_params = [
     ('nu', True), # True = is sampled in log space
     ('B', True),
-    ('ne', True),
+    ('n_e', True),
     ('theta', False),
     ('p', False),
 ]
@@ -387,7 +387,7 @@ class ApproximateSymphony(object):
 
 
     @broadcastize(5)
-    def compute_one(self, nu, B, ne, theta, p, rttype, stokes):
+    def compute_one(self, nu, B, n_e, theta, p, rttype, stokes):
         from . import STOKES_V
         model = self._map[rttype, stokes]
 
@@ -404,7 +404,7 @@ class ApproximateSymphony(object):
             flip = (theta > 0.5 * np.pi)
             theta[flip] = np.pi - theta[flip]
 
-        phys = [nu, B, ne, theta, p]
+        phys = [nu, B, n_e, theta, p]
         npar = 5
 
         norm = np.empty(nu.shape + (npar,))
@@ -413,7 +413,7 @@ class ApproximateSymphony(object):
 
         result = model.predict(norm)[...,0]
         result = self.domain_range.rmaps[model.result_index].norm_to_phys(result)
-        result[ne == 0.] = 0.
+        result[n_e == 0.] = 0.
 
         if stokes == STOKES_V:
             result[flip] = -result[flip]
@@ -422,7 +422,7 @@ class ApproximateSymphony(object):
 
 
     @broadcastize(5, ret_spec=None)
-    def compute_all_nontrivial(self, nu, B, ne, theta, p):
+    def compute_all_nontrivial(self, nu, B, n_e, theta, p):
         # XXX we are paranoid and assume that theta could take on any value
         # ... even though we do no bounds-checking for whether the inputs
         # overlap the region where we trained the neural net.
@@ -434,7 +434,7 @@ class ApproximateSymphony(object):
 
         # Normalize inputs.
 
-        phys = [nu, B, ne, theta, p]
+        phys = [nu, B, n_e, theta, p]
         npar = 5
         norm = np.empty(nu.shape + (npar,))
         for i in xrange(npar):
@@ -449,6 +449,6 @@ class ApproximateSymphony(object):
 
         # Physics-y touchups.
 
-        result[ne == 0.] = 0.
+        result[n_e == 0.] = 0.
         result[flip,4:6] = -result[flip,4:6]
         return result
