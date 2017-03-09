@@ -1,0 +1,99 @@
+
+[[params]]
+name = "nu"
+negate = false
+is_log = true
+mean = 9.73851264222575530
+std = 1.00399180576335079
+phys_min = 100001000.00000000000000000
+phys_max = 299996000000.00000000000000000
+
+[[params]]
+name = "B"
+negate = false
+is_log = true
+mean = 1.50234654903274056
+std = 1.44285842853597224
+phys_min = 0.10000000000000001
+phys_max = 9999.75000000000000000
+
+[[params]]
+name = "ne"
+negate = false
+is_log = true
+mean = 4.99650394183418456
+std = 2.88541301290735985
+phys_min = 1.00001000000000007
+phys_max = 9999910000.00000000000000000
+
+[[params]]
+name = "theta"
+negate = false
+is_log = false
+mean = 0.78606284332666909
+std = 0.45327525227448873
+phys_min = 0.00100279000000000
+phys_max = 1.57079999999999997
+
+[[params]]
+name = "p"
+negate = false
+is_log = false
+mean = 2.74936986837528785
+std = 0.72216040961297978
+phys_min = 1.50000000000000000
+phys_max = 4.00000000000000000
+
+[[results]]
+name = "result0"
+negate = false
+is_log = true
+mean = -18.43497032924864598
+std = 3.89844250645722923
+phys_min = 0.00000000000000000
+phys_max = 0.00000000119357000
+
+[[results]]
+name = "result1"
+negate = false
+is_log = true
+mean = -11.67194845543323467
+std = 5.05807409680557907
+phys_min = 0.00000000000000000
+phys_max = 1.25714999999999999
+
+[[results]]
+name = "result2"
+negate = true
+is_log = true
+mean = -18.77644997501606028
+std = 3.82799669988909397
+phys_min = -0.00000000053534800
+phys_max = -0.00000000000000000
+
+[[results]]
+name = "result3"
+negate = true
+is_log = true
+mean = -12.01892888376619517
+std = 4.90962463262635396
+phys_min = -0.67172900000000002
+phys_max = -0.00000000000000000
+
+[[results]]
+name = "result4"
+negate = true
+is_log = true
+mean = -19.37757340305597964
+std = 4.28689538746212495
+phys_min = -0.00000000119353000
+phys_max = -0.00000000000000000
+
+[[results]]
+name = "result5"
+negate = true
+is_log = true
+mean = -12.55782279687560710
+std = 5.55765207659100291
+phys_min = -1.25543999999999989
+phys_max = -0.00000000000000000
