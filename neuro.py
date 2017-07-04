@@ -11,8 +11,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __all__ = str ('''
 ''').split ()
 
-import os.path
 from collections import OrderedDict
+import os.path
+from six.moves import range
 import numpy as np
 from pwkit.numutil import broadcastize
 from keras import models, layers, optimizers
@@ -141,10 +142,10 @@ class DomainRange(object):
         inst.pmaps = []
         inst.rmaps = []
 
-        for i in xrange(inst.n_params):
+        for i in range(inst.n_params):
             inst.pmaps.append(Mapping(hardcoded_params[i][0], phys_samples[:,i], hardcoded_params[i][1]))
 
-        for i in xrange(inst.n_results):
+        for i in range(inst.n_results):
             inst.rmaps.append(Mapping('result%d' % i, phys_samples[:,i+inst.n_params], True))
 
         return inst
@@ -224,10 +225,10 @@ class SampleData(object):
         self.domain_range = DomainRange.from_samples(self.phys)
         self.norm = np.empty_like(self.phys)
 
-        for i in xrange(self.domain_range.n_params):
+        for i in range(self.domain_range.n_params):
             self.norm[:,i] = self.domain_range.pmaps[i].phys_to_norm(self.phys[:,i])
 
-        for i in xrange(self.domain_range.n_results):
+        for i in range(self.domain_range.n_results):
             j = i + self.domain_range.n_params
             self.norm[:,j] = self.domain_range.rmaps[i].phys_to_norm(self.phys[:,j])
 
@@ -408,7 +409,7 @@ class ApproximateSymphony(object):
         npar = 5
 
         norm = np.empty(nu.shape + (npar,))
-        for i in xrange(npar):
+        for i in range(npar):
             norm[...,i] = self.domain_range.pmaps[i].phys_to_norm(phys[i])
 
         result = model.predict(norm)[...,0]
@@ -437,13 +438,13 @@ class ApproximateSymphony(object):
         phys = [nu, B, n_e, theta, p]
         npar = 5
         norm = np.empty(nu.shape + (npar,))
-        for i in xrange(npar):
+        for i in range(npar):
             norm[...,i] = self.domain_range.pmaps[i].phys_to_norm(phys[i])
 
         # Compute outputs.
 
         result = np.empty(nu.shape + (self.domain_range.n_results,))
-        for i in xrange(self.domain_range.n_results):
+        for i in range(self.domain_range.n_results):
             r = self.models[i].predict(norm)[...,0]
             result[...,i] = self.domain_range.rmaps[i].norm_to_phys(r)
 
