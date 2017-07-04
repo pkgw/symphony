@@ -1,7 +1,7 @@
 CC = icc
-C_INCLUDES = -I../stack/include \
-  -I../stack/lib/python2.7/site-packages/numpy/core/include -Isrc \
-  -I../stack/include/python2.7
+C_INCLUDES = -Isrc -I../stack/include \
+  -I$(shell python -c 'import numpy as np; print(np.get_include())') \
+  -I$(shell python -c 'from distutils import sysconfig as sc; print(sc.get_python_inc())')
 CFLAGS = -Dsymphony_EXPORTS -std=c99 -O3 -g -fPIC $(C_INCLUDES)
 LINKFLAGS = -fPIC -shared
 LDFLAGS = -L../stack/lib -Wl,-rpath,../stack/lib -lgsl -lgslcblas
