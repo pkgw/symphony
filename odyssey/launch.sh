@@ -12,6 +12,13 @@ else
     exit 1
 fi
 
+case "$2" in
+    powerlaw|pitchy) ;;
+    *)
+	echo >&2 "second argument must be \"powerlaw\" or \"pitchy\""
+	exit 1 ;;
+esac
+
 exec sbatch \
     -a $array_spec \
     -o '%A.out' \
@@ -23,4 +30,4 @@ exec sbatch \
     -t $time_lim \
     -o '%A.log' \
     --open-mode=append \
-    $(dirname $0)/runner.sh $(cd $(dirname $0) && pwd)
+    $(dirname $0)/runner.sh "$2" $(cd $(dirname $0) && pwd)

@@ -5,8 +5,9 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import sys, time
+import io, sys, time
 import numpy as np
+from six.moves import range
 import symphony
 
 class Param(object):
@@ -43,20 +44,31 @@ n_calcs = 1024
 
 
 def main():
-    outpath = sys.argv[1]
+    distrib = sys.argv[1]
+    outpath = sys.argv[2]
+
+    if distrib == 'powerlaw':
+        func = symphony.compute_all_nontrivial
+    elif distrib == 'pitchy':
+        func = symphony.compute_all_nontrivial_pitchy
+    else:
+        raise ValueError('bad distrib: %r' % (distrib,))
+
+    # TODO: might potentially have different parameter sets depending
+    # on the distribution function being used.
 
     pvals = np.random.uniform(size=(n_calcs, n_params))
-    for i in xrange(n_params):
+    for i in range(n_params):
         pvals[:,i] = parameters[i].unit_to_phys(pvals[:,i])
 
     # We expect to time out and get killed before we finish all of our
     # calculations, which is why we line-buffer our output.
 
-    with file(outpath, 'a', 1) as outfile:
+    with io.open(outpath, 'at', 1) as outfile:
         print('#', ' '.join(p.summary() for p in parameters), file=outfile)
 
-        for i in xrange(n_calcs):
-            info = symphony.compute_all_nontrivial(*pvals[i], eat_errors=True)
+        for i in range(n_calcs):
+            info = func(*pvals[i], eat_errors=True)
             vec = list(pvals[i]) + list(info)
             print('\t'.join('%g' % v for v in vec), file=outfile)
 
