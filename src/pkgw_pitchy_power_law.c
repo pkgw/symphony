@@ -45,6 +45,9 @@ pkgw_pitchy_power_law_f(double gamma, double cosxi, struct parameters *params)
 
     double body = pow(gamma, -params->power_law_p) * exp(-gamma / params->gamma_cutoff);
 
-    return norm * prefactor * body /
+    double pa_term = sin(cosxi * cosxi * M_PI);
+    pa_term = pa_term * pa_term * 2.6459460971005484;
+
+    return norm * prefactor * body * pa_term /
         (pow(params->mass_electron, 3.) * pow(params->speed_light, 3.) * gamma * gamma * beta);
 }
