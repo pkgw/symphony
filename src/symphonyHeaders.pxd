@@ -72,3 +72,8 @@ cdef extern from "symphony.h":
                         double kappa,
                         double kappa_width)
 
+
+    double compute_pkgw_pitchy(int mode, int polarization, double nu, double magnetic_field,
+                               double electron_density, double observer_angle,
+                               double power_law_p, double gamma_min, double gamma_max,
+                               double gamma_cutoff, char **error_message)

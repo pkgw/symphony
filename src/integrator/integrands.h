@@ -5,6 +5,7 @@
 #include "maxwell_juettner/maxwell_juettner.h"
 #include "power_law/power_law.h"
 #include "kappa/kappa.h"
+#include "pkgw_pitchy_power_law.h"
 
 double n_summation(struct parameters *params);
 double gamma_integrand(double gamma, void * paramsInput);

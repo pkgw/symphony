@@ -1,4 +1,6 @@
-from symphonyHeaders cimport j_nu, alpha_nu, j_nu_fit, alpha_nu_fit, rho_nu_fit
+# -*- mode: python; coding: utf-8 -*-
+
+from symphonyHeaders cimport j_nu, alpha_nu, j_nu_fit, alpha_nu_fit, rho_nu_fit, compute_pkgw_pitchy
 
 def j_nu_py(double nu,
             double magnetic_field,
@@ -160,6 +162,26 @@ def rho_nu_fit_py(double nu,
                       gamma_cutoff, kappa, kappa_width)
 
 
+def compute_pkgw_pitchy_py(int mode,
+                           int polarization,
+                           double nu,
+                           double magnetic_field,
+                           double electron_density,
+                           double observer_angle,
+                           double power_law_p,
+                           double gamma_min,
+                           double gamma_max,
+                           double gamma_cutoff):
+  cdef char* error_message = NULL
+
+  result = compute_pkgw_pitchy(mode, polarization, nu, magnetic_field,
+                               electron_density, observer_angle, power_law_p, gamma_min,
+                               gamma_max, gamma_cutoff, &error_message)
+
+  if error_message:
+    raise RuntimeError(error_message)
+  return result
+
 
 #DEFINE KEYS FOR DISTRIBUTION FUNCTIONS
 MAXWELL_JUETTNER = 0
@@ -171,3 +193,6 @@ STOKES_I         = 15
 STOKES_Q         = 16
 STOKES_U         = 17
 STOKES_V         = 18
+
+ABSORPTIVITY = 10
+EMISSIVITY = 11

@@ -18,6 +18,7 @@ struct parameters
   int    MAXWELL_JUETTNER;
   int    POWER_LAW;
   int    KAPPA_DIST;
+  int    PKGW_PITCHY_POWER_LAW;
   /*Keys for the polarization modes*/
   int    STOKES_I;
   int    STOKES_Q;

@@ -147,4 +147,10 @@ void set_distribution_function(struct parameters * params)
     params->use_n_peak            = 0;
     params->analytic_differential = differential_of_kappa;
   }
+  else if(params->distribution == params->PKGW_PITCHY_POWER_LAW)
+  {
+    params->distribution_function = &pkgw_pitchy_power_law_f;
+    params->use_n_peak            = 0;
+    params->analytic_differential = NULL;
+  }
 }

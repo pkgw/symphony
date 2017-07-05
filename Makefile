@@ -18,6 +18,7 @@ sources = \
   src/maxwell_juettner/maxwell_juettner.c \
   src/maxwell_juettner/maxwell_juettner_fits.c \
   src/params.c \
+  src/pkgw_pitchy_power_law.c \
   src/power_law/power_law.c \
   src/power_law/power_law_fits.c \
   src/symphony.c

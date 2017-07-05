@@ -23,6 +23,7 @@ void setConstParams(struct parameters *params)
   params->MAXWELL_JUETTNER = 0;
   params->POWER_LAW        = 1;
   params->KAPPA_DIST       = 2;
+  params->PKGW_PITCHY_POWER_LAW = 3;
   /* Keys for the polarization parameter */
   params->STOKES_I         = 15;
   params->STOKES_Q         = 16;

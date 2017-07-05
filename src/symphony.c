@@ -182,3 +182,63 @@ double alpha_nu(double nu,
 
   return NAN;
 }
+
+
+double
+compute_pkgw_pitchy(int mode,
+                    int polarization,
+                    double nu,
+                    double magnetic_field,
+                    double electron_density,
+                    double observer_angle,
+                    double power_law_p,
+                    double gamma_min,
+                    double gamma_max,
+                    double gamma_cutoff,
+                    char **error_message)
+{
+  gsl_error_handler_t *prev_handler;
+  double retval;
+
+  struct parameters params;
+
+  setConstParams(&params);
+
+  params.nu                 = nu;
+  params.magnetic_field     = magnetic_field;
+  params.observer_angle     = observer_angle;
+  params.electron_density   = electron_density;
+  params.distribution       = params.PKGW_PITCHY_POWER_LAW;
+  params.polarization       = polarization;
+  params.mode               = mode;
+  params.theta_e            = -1;
+  params.power_law_p        = power_law_p;
+  params.gamma_min          = gamma_min;
+  params.gamma_max          = gamma_max;
+  params.gamma_cutoff       = gamma_cutoff;
+  params.kappa              = -1;
+  params.kappa_width        = -1;
+
+  if (error_message != NULL)
+    *error_message = NULL; /* Initialize the user's error message. */
+
+  global_gsl_error_message = &params.error_message;
+  prev_handler = gsl_set_error_handler(_handle_gsl_error);
+  set_distribution_function(&params);
+  retval = n_summation(&params);
+  gsl_set_error_handler(prev_handler);
+  global_gsl_error_message = NULL;
+
+  /* Success? */
+
+  if (params.error_message == NULL)
+    return retval;
+
+  /* Something went wrong. Give the caller the error message if they
+   * provided us with a place to save it. */
+
+  if (error_message != NULL)
+    *error_message = params.error_message;
+
+  return NAN;
+}
