@@ -111,12 +111,18 @@ double numerical_differential_of_f(double gamma, double cosxi, struct parameters
     these regions. */
   double (*f)(double gamma, double cosxi, struct parameters *) = params->distribution_function;
 
-  if (isnan(f(gamma + epsilon_gamma, cosxi, params)))
+  double f_plus = f(gamma + epsilon_gamma, cosxi, params);
+
+  if (isnan(f_plus)) {
     Dgamma = (f(gamma, cosxi, params) - f(gamma - epsilon_gamma, cosxi, params)) / epsilon_gamma;
-  else if (isnan(f(gamma - epsilon_gamma, cosxi, params)))
-    Dgamma = (f(gamma + epsilon_gamma, cosxi, params) - f(gamma, cosxi, params)) / epsilon_gamma;
-  else
-    Dgamma = (f(gamma + epsilon_gamma, cosxi, params) - f(gamma - epsilon_gamma, cosxi, params)) / (2 * epsilon_gamma);
+  } else {
+    double f_minus = f(gamma - epsilon_gamma, cosxi, params);
+
+    if (isnan(f_minus))
+      Dgamma = (f_plus - f(gamma, cosxi, params)) / epsilon_gamma;
+    else
+      Dgamma = (f_plus - f_minus) / (2 * epsilon_gamma);
+  }
 
   /* Now compute the d/dcosxi term similarly */
 
