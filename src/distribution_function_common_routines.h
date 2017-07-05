@@ -11,7 +11,7 @@ double normalize_f(double (*distribution)(double, void *),
                    struct parameters * params
                   );
 
-double numerical_differential_of_f(double gamma, struct parameters * params);
+double numerical_differential_of_f(double gamma, double cosxi, struct parameters * params);
 double analytic_differential_of_f(double gamma, struct parameters * params);
 
 //#endif /* SYMPHONY_DISTRIBUTION_FUNCTION_COMMON_ROUTINES_H_ */

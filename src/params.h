@@ -55,7 +55,7 @@ struct parameters
   double (*n_peak)(struct parameters *);
 
   /*Set distribution_function */
-  double (*distribution_function)(double gamma, struct parameters *);
+  double (*distribution_function)(double gamma, double cosxi, struct parameters *);
 
   /*analytic_differential_of_f, which can be used as a test of the 
     numerical differential_of_f */

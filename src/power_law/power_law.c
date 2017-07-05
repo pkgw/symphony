@@ -43,7 +43,7 @@ double power_law_to_be_normalized(double gamma, void * paramsInput)
  *@returns: normalized power-law distribution function with
  *          exponential cutoff.
  */
-double power_law_f(double gamma, struct parameters * params) 
+double power_law_f(double gamma, double cosxi, struct parameters * params)
 {
 
   /*The distribution function only needs to be normalized once; the

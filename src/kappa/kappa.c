@@ -42,7 +42,7 @@ double kappa_to_be_normalized(double gamma, void * paramsInput)
  *@returns: normalized kappa distribution function with exponential cutoff.
  */
 
-double kappa_f(double gamma, struct parameters * params)
+double kappa_f(double gamma, double cosxi, struct parameters * params)
 {
 
   

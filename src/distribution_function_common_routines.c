@@ -78,7 +78,7 @@ double analytic_differential_of_f(double gamma, struct parameters * params)
   return prefactor * Df;
 }
 
-double numerical_differential_of_f(double gamma, struct parameters * params)
+double numerical_differential_of_f(double gamma, double cosxi, struct parameters *params)
 {
   /*this is "d^3p Df" from [1] eq. 12 and 13.*/ 
 
@@ -107,22 +107,22 @@ double numerical_differential_of_f(double gamma, struct parameters * params)
     distribution_function(gamma-epsilon) is complex, and returns
     NaN.  The if statements use a one-sided approximation to avoid
     these regions. */
-  if(isnan(params->distribution_function(gamma+epsilon, params)) != 0)
+  if(isnan(params->distribution_function(gamma+epsilon, cosxi, params)) != 0)
   {
-    Df =  (params->distribution_function(gamma, params)
-           - params->distribution_function(gamma-epsilon, params))
+    Df =  (params->distribution_function(gamma, cosxi, params)
+           - params->distribution_function(gamma-epsilon, cosxi, params))
           / (epsilon);
   }
-  else if(isnan(params->distribution_function(gamma-epsilon, params)) != 0)
+  else if(isnan(params->distribution_function(gamma-epsilon, cosxi, params)) != 0)
   {
-    Df =  (params->distribution_function(gamma+epsilon, params)
-           - params->distribution_function(gamma, params))
+    Df =  (params->distribution_function(gamma+epsilon, cosxi, params)
+           - params->distribution_function(gamma, cosxi, params))
           / (epsilon);
   }
   else
   {
-    Df =  (params->distribution_function(gamma+epsilon, params)
-           - params->distribution_function(gamma-epsilon, params))
+    Df =  (params->distribution_function(gamma+epsilon, cosxi, params)
+           - params->distribution_function(gamma-epsilon, cosxi, params))
           / (2. * epsilon);
   }
 

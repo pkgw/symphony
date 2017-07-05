@@ -88,6 +88,11 @@ double gamma_integrand(double gamma, void * paramsGSLInput)
 
   double beta = sqrt(1. - 1./(gamma*gamma));
 
+  double nu_c = get_nu_c(*params);
+
+  double cosxi = (gamma * params->nu - paramsGSL->n * nu_c) /
+      (gamma * params->nu * beta * cos(params->observer_angle));
+
   double ans = 0.;
 
   if (params->mode == params->EMISSIVITY)
@@ -97,7 +102,7 @@ double gamma_integrand(double gamma, void * paramsGSLInput)
     / params->speed_light * (  pow(params->mass_electron * params->speed_light, 3.)
                              * gamma*gamma * beta * 2. * params->pi
                             )
-    * params->distribution_function(gamma, params)
+      * params->distribution_function(gamma, cosxi, params)
     * polarization_term(gamma, paramsGSL->n, params);
 
     double prefactor = 1./(params->nu * beta * fabs(cos(params->observer_angle)));
@@ -112,7 +117,7 @@ double gamma_integrand(double gamma, void * paramsGSLInput)
                         / (2. * params->nu);
 
     ans = prefactor * gamma * gamma * beta
-         * numerical_differential_of_f(gamma,  params)
+         * numerical_differential_of_f(gamma,  cosxi, params)
          * polarization_term(gamma, paramsGSL->n, params)
          * (1./(params->nu*beta*fabs(cos(params->observer_angle))));
 

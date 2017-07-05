@@ -4,7 +4,7 @@
 #include "../distribution_function_common_routines.h"
 #include <gsl/gsl_sf_bessel.h>
 
-double maxwell_juettner_f(double gamma, struct parameters * params);
+double maxwell_juettner_f(double gamma, double cosxi, struct parameters * params);
 double differential_of_maxwell_juettner(double gamma, struct parameters * params);
 double maxwell_juettner_n_peak(struct parameters * params);
 

@@ -45,7 +45,7 @@ double maxwell_juettner_n_peak(struct parameters * params)
  *          struct params (such as dimensionless electron temperature
  *          theta_e). 
  */
-double maxwell_juettner_f(double gamma, struct parameters * params) 
+double maxwell_juettner_f(double gamma, double cosxi, struct parameters * params)
 {
   double beta = sqrt(1. - 1./(gamma*gamma));
 

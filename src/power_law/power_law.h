@@ -4,7 +4,7 @@
 #include "../distribution_function_common_routines.h"
 
 double power_law_to_be_normalized(double gamma, void * paramsInput);
-double power_law_f(double gamma, struct parameters * params); 
+double power_law_f(double gamma, double cosxi, struct parameters * params);
 double differential_of_power_law(double gamma, struct parameters * params);
 
 double power_law_I(struct parameters * params);

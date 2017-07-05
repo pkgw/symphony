@@ -5,7 +5,7 @@
 #include "gsl/gsl_sf_hyperg.h"
 
 double kappa_to_be_normalized(double gamma, void * paramsInput);
-double kappa_f(double gamma, struct parameters * params);
+double kappa_f(double gamma, double cosxi, struct parameters * params);
 double differential_of_kappa(double gamma, struct parameters * params);
 
 double kappa_I(struct parameters * params);

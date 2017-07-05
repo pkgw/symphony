@@ -17,7 +17,7 @@ normalization_function(double gamma, void *params_v)
 
 
 double
-pkgw_pitchy_power_law_f(double gamma, struct parameters *params)
+pkgw_pitchy_power_law_f(double gamma, double cosxi, struct parameters *params)
 {
     static double norm = 0;
     static double previous_power_law_p = 0;
