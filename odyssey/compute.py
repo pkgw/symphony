@@ -69,6 +69,9 @@ def main():
 
         for i in range(n_calcs):
             info = func(*pvals[i], eat_errors=True)
+            if not np.all(np.isfinite(info)):
+                print('WARNING: got nonfinite answers for:', ' '.join('%.18e' % p for p in pvals[i]), file=sys.stderr)
+                sys.stderr.flush()
             vec = list(pvals[i]) + list(info)
             print('\t'.join('%g' % v for v in vec), file=outfile)
 
