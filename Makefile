@@ -4,7 +4,7 @@ C_INCLUDES = -Isrc -I../stack/include \
   -I$(shell python -c 'from distutils import sysconfig as sc; print(sc.get_python_inc())')
 CFLAGS = -Dsymphony_EXPORTS -std=c99 -O3 -g -fPIC $(C_INCLUDES)
 LINKFLAGS = -fPIC -shared
-LDFLAGS = -L../stack/lib -Wl,-rpath,../stack/lib -lgsl -lgslcblas
+LDFLAGS = -L../stack/lib -Wl,-rpath,$(shell cd .. && pwd)/stack/lib -lgsl -lgslcblas
 
 sources = \
   src/bessel_mod.c \

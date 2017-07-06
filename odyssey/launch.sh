@@ -19,6 +19,17 @@ case "$2" in
 	exit 1 ;;
 esac
 
+mod=intel/17.0.2-fasrc01
+
+if ldd $(dirname $0)/../symphonyPy.so |grep -q 'not found' ; then
+    echo "Compiler module $mod needs loading."
+    module load $mod
+    if ldd $(dirname $0)/../symphonyPy.so |grep -q 'not found' ; then
+	echo >&2 "error: still have dylib problems"
+	exit 1
+    fi
+fi
+
 exec sbatch \
     -a $array_spec \
     -o '%A.out' \
