@@ -51,12 +51,13 @@ double kappa_f(double gamma, double cosxi, struct parameters * params)
     it is not being normalized with each function call to kappa_f;
     it does need to be normalized again if any of the distribution
     function parameters change, though. */
-  static double norm                  = 0.;
-  static double previous_kappa        = 0.;
-  static double previous_kappa_width  = 0.;
-  static double previous_gamma_cutoff = 0.;
-  if(norm == 0. || previous_kappa_width != params->kappa_width
-                || previous_kappa       != params->kappa)
+  static double norm                   = 0.;
+  static double previous_kappa         = 0.;
+  static double previous_kappa_width   = 0.;
+  static double previous_gamma_cutoff  = 0.;
+  if(norm == 0. || previous_kappa_width  != params->kappa_width
+                || previous_kappa        != params->kappa
+                || previous_gamma_cutoff != params->gamma_cutoff)
   {
     norm                  = 1./normalize_f(&kappa_to_be_normalized, params);
     previous_kappa        = params->kappa;
