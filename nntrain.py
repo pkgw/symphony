@@ -240,6 +240,8 @@ def make_parser():
                     help='The RT coefficient type: j or alpha.')
     ap.add_argument('stokes', type=str, metavar='STOKES',
                     help='The Stokes parameter: i q or v.')
+    ap.add_argument('outpath', type=str, metavar='PATH',
+                    help='The path of the output HDF5 file.')
     return ap
 
 
@@ -252,7 +254,7 @@ def main():
     if args.plot:
         page_results(m, residuals=args.residuals)
 
-    m.save('%s_%s.h5' % (args.rttype, args.stokes), overwrite=True)
+    m.save(args.outpath, overwrite=True)
 
 
 if __name__ == '__main__':
