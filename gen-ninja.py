@@ -30,7 +30,7 @@ def inner(w, cc, mode):
     from distutils import sysconfig
 
     stack_path = '../stack'
-    abs_stack_path = str(io.Path(stack_path).absolute())
+    abs_stack_path = str(io.Path(stack_path).resolve())
 
     cpp_includes = [
         '-Isrc',
@@ -56,7 +56,7 @@ def inner(w, cc, mode):
     ld_args = [
         '-fPIC',
         '-shared',
-        '-Wl,-rpath,%s/stack/lib' % abs_stack_path,
+        '-Wl,-rpath,%s/lib' % abs_stack_path,
     ]
 
     libraries = [
