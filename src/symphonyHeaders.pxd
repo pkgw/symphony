@@ -77,3 +77,8 @@ cdef extern from "symphony.h":
                                double electron_density, double observer_angle,
                                double power_law_p, double gamma_min, double gamma_max,
                                double gamma_cutoff, char **error_message)
+
+    double sample_synchrotron(int mode, int polarization, int is_pitchy, double nu, double magnetic_field,
+                              double electron_density, double observer_angle,
+                              double power_law_p, double gamma, double n,
+                              char **error_message)

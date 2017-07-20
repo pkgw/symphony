@@ -242,3 +242,95 @@ compute_pkgw_pitchy(int mode,
 
   return NAN;
 }
+
+
+double
+sample_synchrotron(int mode,
+                   int polarization,
+                   int is_pitchy,
+                   double nu,
+                   double magnetic_field,
+                   double electron_density,
+                   double observer_angle,
+                   double power_law_p,
+                   double gamma,
+                   double n,
+                   char **error_message)
+{
+  gsl_error_handler_t *prev_handler;
+  double retval;
+
+  struct parameters params;
+
+  setConstParams(&params);
+
+  params.nu                 = nu;
+  params.magnetic_field     = magnetic_field;
+  params.observer_angle     = observer_angle;
+  params.electron_density   = electron_density;
+  params.polarization       = polarization;
+  params.mode               = mode;
+  params.theta_e            = -1;
+  params.power_law_p        = power_law_p;
+  params.gamma_min          = 1.;
+  params.gamma_max          = 1000.;
+  params.gamma_cutoff       = 1e7;
+  params.kappa              = -1;
+  params.kappa_width        = -1;
+
+  if (is_pitchy)
+    params.distribution = params.PKGW_PITCHY_POWER_LAW;
+  else
+    params.distribution = params.POWER_LAW;
+
+  if (error_message != NULL)
+    *error_message = NULL; /* Initialize the user's error message. */
+
+  /* Check if we're in a no-resonance condition */
+
+  double nu_c = get_nu_c(params);
+  double sinth = sin(params.observer_angle);
+  double n_minus = params.nu * fabs(sinth) / nu_c;
+
+  if (n < n_minus)
+    return 0;
+
+  double r = n * nu_c / params.nu;
+  double x = fabs(cos(params.observer_angle)) * sqrt(r * r - sinth * sinth);
+  double gamma_minus = (r - x) / (sinth * sinth);
+
+  if (gamma < gamma_minus)
+    return 0;
+
+  double gamma_plus = (r + x) / (sinth * sinth);
+
+  if (gamma > gamma_plus)
+    return 0;
+
+  /* We actually have something to do. */
+
+  global_gsl_error_message = &params.error_message;
+  prev_handler = gsl_set_error_handler(_handle_gsl_error);
+  set_distribution_function(&params);
+
+  struct parametersGSL pgsl;
+  pgsl.params = params;
+  pgsl.n = n;
+  retval = gamma_integrand(gamma, &pgsl);
+
+  gsl_set_error_handler(prev_handler);
+  global_gsl_error_message = NULL;
+
+  /* Success? */
+
+  if (params.error_message == NULL)
+    return retval;
+
+  /* Something went wrong. Give the caller the error message if they
+   * provided us with a place to save it. */
+
+  if (error_message != NULL)
+    *error_message = params.error_message;
+
+  return NAN;
+}
