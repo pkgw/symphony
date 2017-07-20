@@ -51,6 +51,9 @@ def main():
         func = symphony.compute_all_nontrivial
     elif distrib == 'pitchy':
         func = symphony.compute_all_nontrivial_pitchy
+    elif distrib == 'pitchy-jv':
+        def func(nu, B, n_e, theta, p, eat_errors=False):
+            return [symphony.compute_pitchy(symphony.EMISSION, symphony.STOKES_V, nu, B, n_e, theta, p, eat_errors=eat_errors)]
     else:
         raise ValueError('bad distrib: %r' % (distrib,))
 
