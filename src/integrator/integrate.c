@@ -193,7 +193,8 @@ double n_summation(struct parameters *params)
      ans += gamma_integration_result(n, params);
   }
 
-  params->stokes_v_switch = 0;
+  if(params->distribution != params->PKGW_PITCHY_POWER_LAW)
+      params->stokes_v_switch = 0;
 
   /*add result of n sum from 1 to n_max to an integral over n from n_max to
     the point where the integral no longer gives appreciable contributions.
@@ -208,7 +209,7 @@ double n_summation(struct parameters *params)
     resolve the n integrals.  Again, if the n integral returns NAN (which 
     should only occur if the n integral is basically zero), we just take
     the result from the sum.*/
-  if(params->polarization == params->STOKES_V)
+  if(params->polarization == params->STOKES_V && params->distribution != params->PKGW_PITCHY_POWER_LAW)
   {
     params->stokes_v_switch = 1;
     n_integral_contrib = n_integration(n_minus, params->n_peak, params); 
