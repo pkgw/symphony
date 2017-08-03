@@ -7,8 +7,11 @@ if [ "$1" = test ] ; then
 elif [ "$1" = prod ] ; then
     array_spec=0-1023
     time_lim=60
+elif [ "$1" = med ] ; then
+    array_spec=0-128
+    time_lim=10
 else
-    echo >&2 "first argument must be either \"test\" or \"prod\""
+    echo >&2 "first argument must be either \"test\" or \"prod\" or \"med\""
     exit 1
 fi
 
