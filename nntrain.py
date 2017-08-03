@@ -222,7 +222,7 @@ def page_results(m, residuals=False, thin=500):
     import omega as om
 
     pg = om.makeDisplayPager()
-    for i in xrange(m.domain_range.n_params):
+    for i in range(m.domain_range.n_params):
         pg.send(m.ns_plot(i, plot_err=residuals, thin=thin))
 
     pg.done()
