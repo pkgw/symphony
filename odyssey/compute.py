@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import io, sys, time
 import numpy as np
+from pwkit import cgs
 from six.moves import range
 import symphony
 
@@ -32,9 +33,7 @@ class Param(object):
 
 
 parameters = [
-    Param('nu', 1e8, 3e11, True),
-    Param('B', 0.1, 1e4, True),
-    Param('n_e', 1, 1e10, True),
+    Param('s', 0.07, 1e8, True),
     Param('theta', 0.001, 0.5 * np.pi, False),
     Param('p', 1.5, 4, False),
 ]
@@ -42,6 +41,9 @@ parameters = [
 n_params = len(parameters)
 n_calcs = 1024
 
+s_param_index = 0
+nu_ref = 1e9
+ne_ref = 1.0
 
 def main():
     distrib = sys.argv[1]
@@ -64,6 +66,10 @@ def main():
     for i in range(n_params):
         pvals[:,i] = parameters[i].unit_to_phys(pvals[:,i])
 
+    # Pre-compute this
+
+    B = 2 * np.pi * nu_ref * cgs.me * cgs.c / (cgs.e * pvals[:,s_param_index])
+
     # We expect to time out and get killed before we finish all of our
     # calculations, which is why we line-buffer our output.
 
@@ -71,7 +77,9 @@ def main():
         print('#', ' '.join(p.summary() for p in parameters), file=outfile)
 
         for i in range(n_calcs):
-            info = func(*pvals[i], eat_errors=True)
+            theta, p = pvals[i,1:]
+
+            info = func(nu_ref, B[i], ne_ref, theta, p, eat_errors=True)
             if not np.all(np.isfinite(info)):
                 print('WARNING: got nonfinite answers for:', ' '.join('%.18e' % p for p in pvals[i]), file=sys.stderr)
                 sys.stderr.flush()
