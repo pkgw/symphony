@@ -80,7 +80,9 @@ double gamma_integration_result(double n, void * paramsInput)
 
   if (params->polarization != params->STOKES_V || params->stokes_v_switch < 0) 
   {
-    result = gamma_integral(gamma_minus_high, gamma_plus_high, n, params);
+    double r1 = gamma_integral(gamma_minus, gamma_peak, n, params);
+    double r2 = gamma_integral(gamma_peak, gamma_plus, n, params);
+    result = r1 + r2;
   }
 
   /*GSL QAG sometimes erroneously gives NaN instead of small values; 
