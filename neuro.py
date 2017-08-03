@@ -15,19 +15,28 @@ from collections import OrderedDict
 import os.path
 from six.moves import range
 import numpy as np
+from pwkit import cgs
 from pwkit.numutil import broadcastize
 from keras import models, layers, optimizers
 
 
 hardcoded_params = [
-    ('nu', True), # True = is sampled in log space
-    ('B', True),
-    ('n_e', True),
+    ('s', True), # True = is sampled in log space
     ('theta', False),
     ('p', False),
 ]
 
-hardcoded_n_results = 6
+hardcoded_result_names = [
+    'j_I',
+    'alpha_I',
+    'j_Q',
+    'alpha_Q',
+    'j_V',
+    'alpha_V',
+]
+
+hardcoded_nu_ref = 1e9
+hardcoded_ne_ref = 1.0
 
 config_path = os.path.join(os.path.dirname(__file__), 'nn_config.toml')
 
@@ -129,7 +138,7 @@ class Mapping(object):
 
 class DomainRange(object):
     n_params = len(hardcoded_params)
-    n_results = hardcoded_n_results
+    n_results = len(hardcoded_result_names)
     pmaps = None
     rmaps = None
 
@@ -146,7 +155,7 @@ class DomainRange(object):
             inst.pmaps.append(Mapping(hardcoded_params[i][0], phys_samples[:,i], hardcoded_params[i][1]))
 
         for i in range(inst.n_results):
-            inst.rmaps.append(Mapping('result%d' % i, phys_samples[:,i+inst.n_params], True))
+            inst.rmaps.append(Mapping(hardcoded_result_names[i], phys_samples[:,i+inst.n_params], True))
 
         return inst
 
@@ -215,10 +224,12 @@ class SampleData(object):
         # Sadly necessary postprocessing. 1. Sometimes Symphony gives {j,alpha}_V > 0;
         # this should never happen with the range of thetas we explore.
 
-        w = self.phys[:,9] >= 0
-        self.phys[w,9] = np.nan
-        w = self.phys[:,10] >= 0
-        self.phys[w,10] = np.nan
+        w = self.phys[:,7] >= 0
+        print('Hack-clipping %d j_V values.' % w.sum())
+        self.phys[w,7] = np.nan
+        w = self.phys[:,8] >= 0
+        print('Hack-clipping %d alpha_V values.' % w.sum())
+        self.phys[w,8] = np.nan
 
         # End of postprocessing.
 
@@ -389,11 +400,16 @@ class ApproximateSymphony(object):
 
     @broadcastize(5)
     def compute_one(self, nu, B, n_e, theta, p, rttype, stokes):
-        from . import STOKES_V
+        from . import STOKES_V, EMISSION, ABSORPTION
         model = self._map[rttype, stokes]
 
         if model is None:
             return np.zeros(nu.shape)
+
+        # Turn the standard parameters into the ones used in our computations
+
+        nu_cyc = cgs.e * B / (2 * np.pi * cgs.me * cgs.c)
+        s = nu / nu_cyc
 
         if stokes == STOKES_V:
             # XXX we are paranoid and assume that theta could take on any
@@ -405,8 +421,8 @@ class ApproximateSymphony(object):
             flip = (theta > 0.5 * np.pi)
             theta[flip] = np.pi - theta[flip]
 
-        phys = [nu, B, n_e, theta, p]
-        npar = 5
+        phys = [s, theta, p]
+        npar = len(phys)
 
         norm = np.empty(nu.shape + (npar,))
         for i in range(npar):
@@ -414,7 +430,15 @@ class ApproximateSymphony(object):
 
         result = model.predict(norm)[...,0]
         result = self.domain_range.rmaps[model.result_index].norm_to_phys(result)
-        result[n_e == 0.] = 0.
+
+        # Now apply the known scalings
+
+        result *= (n_e / hardcoded_ne_ref)
+
+        if rttype == EMISSION:
+            result *= (nu / hardcoded_nu_ref)
+        else:
+            result *= (hardcoded_nu_ref / nu)
 
         if stokes == STOKES_V:
             result[flip] = -result[flip]
@@ -424,6 +448,11 @@ class ApproximateSymphony(object):
 
     @broadcastize(5, ret_spec=None)
     def compute_all_nontrivial(self, nu, B, n_e, theta, p):
+        # Turn the standard parameters into the ones used in our computations
+
+        nu_cyc = cgs.e * B / (2 * np.pi * cgs.me * cgs.c)
+        s = nu / nu_cyc
+
         # XXX we are paranoid and assume that theta could take on any value
         # ... even though we do no bounds-checking for whether the inputs
         # overlap the region where we trained the neural net.
@@ -435,8 +464,8 @@ class ApproximateSymphony(object):
 
         # Normalize inputs.
 
-        phys = [nu, B, n_e, theta, p]
-        npar = 5
+        phys = [s, theta, p]
+        npar = len(phys)
         norm = np.empty(nu.shape + (npar,))
         for i in range(npar):
             norm[...,i] = self.domain_range.pmaps[i].phys_to_norm(phys[i])
@@ -448,8 +477,13 @@ class ApproximateSymphony(object):
             r = self.models[i].predict(norm)[...,0]
             result[...,i] = self.domain_range.rmaps[i].norm_to_phys(r)
 
-        # Physics-y touchups.
+        # Now apply the known scalings
 
-        result[n_e == 0.] = 0.
+        result *= (n_e / hardcoded_ne_ref)
+
+        freq_term = nu / hardcoded_nu_ref
+        result[...,0::2] *= freq_term # j's scale directly with nu at fixed s
+        result[...,1::2] /= freq_term # alpha's scale inversely with nu at fixed s
+
         result[flip,4:6] = -result[flip,4:6]
         return result
