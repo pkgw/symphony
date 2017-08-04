@@ -16,175 +16,227 @@ import os.path
 from six.moves import range
 import numpy as np
 from pwkit import cgs
+from pwkit.io import Path
 from pwkit.numutil import broadcastize
+import pytoml
 from keras import models, layers, optimizers
 
-
-hardcoded_params = [
-    ('s', True), # True = is sampled in log space
-    ('theta', False),
-    ('p', False),
-]
-
-hardcoded_result_names = [
-    'j_I',
-    'alpha_I',
-    'j_Q',
-    'alpha_Q',
-    'j_V',
-    'alpha_V',
-]
 
 hardcoded_nu_ref = 1e9
 hardcoded_ne_ref = 1.0
 
-config_path = os.path.join(os.path.dirname(__file__), 'nn_config.toml')
-
 
 class Mapping(object):
-    def __init__(self, name, phys_samples, is_log):
+    def __init__(self, name):
         self.name = name
 
-        phys_samples = phys_samples[np.isfinite(phys_samples)]
-        assert phys_samples.size, 'no valid samples for %s' % name
 
-        if (phys_samples > 0).all():
-            self.negate = False
-        elif (phys_samples < 0).all():
-            self.negate = True
-        else:
-            assert False, 'vector %s is zero-crossing' % name
+    @classmethod
+    def from_samples(cls, name, phys_samples):
+        inst = cls(name)
 
-        self.p_min = phys_samples.min()
-        self.p_max = phys_samples.max()
+        valid = np.isfinite(phys_samples) & inst._is_valid(phys_samples)
+        n_rej = phys_samples.size - valid.sum()
+        print('%s: rejecting %d samples out of %d' % (name, n_rej, phys_samples.size))
+        phys_samples = phys_samples[valid]
+        if phys_samples.size < 3:
+            raise Exception('not enough valid samples for %s' % name)
 
-        if self.negate:
-            phys_samples = -phys_samples
+        inst.p_min = phys_samples.min()
+        inst.p_max = phys_samples.max()
 
-        self.is_log = bool(is_log)
-        if self.is_log:
-            phys_samples = np.log10(phys_samples)
+        # Pluggable "transform"
+        transformed = inst._to_xform(phys_samples)
+        inst.x_mean = transformed.mean()
+        inst.x_std = transformed.std()
 
-        self.mean = phys_samples.mean()
-        self.std = phys_samples.std()
+        # Normalize
+        normed = (transformed - inst.x_mean) / inst.x_std
+        inst.n_min = normed.min()
+        inst.n_max = normed.max()
 
-        normed = (phys_samples - self.mean) / self.std
-        self.n_min = normed.min()
-        self.n_max = normed.max()
+        return inst
 
 
     def __repr__(self):
-        return '<Mapping %s neg=%r log=%r mean=%r sd=%r>' % \
-            (self.name, self.negate, self.is_log, self.mean, self.std)
+        return '<Mapping %s %s mean=%r sd=%r>' % (self.name, self.desc, self.x_mean, self.x_std)
 
 
     def phys_to_norm(self, phys):
         # TODO: (optional?) bounds checking!
-        if self.negate:
-            phys = -phys
-        if self.is_log:
-            phys = np.log10(phys)
-        return (phys - self.mean) / self.std
+        return (self._to_xform(phys) - self.x_mean) / self.x_std
 
 
     def norm_to_phys(self, norm):
         # TODO: (optional?) bounds checking!
-        norm = norm * self.std + self.mean
-        if self.is_log:
-            norm = 10**norm
-        if self.negate:
-            norm = -norm
-        return norm
+        return self._from_xform(norm * self.x_std + self.x_mean)
 
 
     def to_dict(self):
         d = OrderedDict()
         d['name'] = self.name
-        d['negate'] = self.negate
-        d['is_log'] = self.is_log
-        d['mean'] = self.mean
-        d['std'] = self.std
+        d['maptype'] = self.desc
+        d['x_mean'] = self.x_mean
+        d['x_std'] = self.x_std
         d['phys_min'] = self.p_min
         d['phys_max'] = self.p_max
+        d['norm_min'] = self.n_min
+        d['norm_max'] = self.n_max
         return d
 
 
     @classmethod
     def from_dict(cls, info):
-        # Blah total hack to override constructor.
-        inst = cls('x', np.array([1., 2, 3]), False)
-        inst.name = str(info['name'])
-        inst.negate = bool(info['negate'])
-        inst.is_log = bool(info['is_log'])
-        inst.mean = float(info['mean'])
-        inst.std = float(info['std'])
+        if str(info['maptype']) != cls.desc:
+            raise ValueError('info is for maptype %s but this class is %s' % (info['maptype'], cls.desc))
+
+        inst = cls(str(info['name']))
+        inst.x_mean = float(info['x_mean'])
+        inst.x_std = float(info['x_std'])
         inst.p_min = float(info['phys_min'])
         inst.p_max = float(info['phys_max'])
-
-        # Figure out n_{min,max}. Do so manually just in case there ends up
-        # being bounds checking that will blow up if n_{min,max} are unset.
-        x = np.array([inst.p_min, inst.p_max])
-        if inst.negate:
-            x = -x
-        if inst.is_log:
-            x = np.log10(x)
-        x = (x - inst.mean) / inst.std
-
-        inst.n_min = x.min()
-        inst.n_max = x.max()
+        inst.n_min = float(info['norm_min'])
+        inst.n_max = float(info['norm_max'])
 
         return inst
 
 
+class DirectMapping(Mapping):
+    desc = 'direct'
+
+    def _to_xform(self, p):
+        return p
+
+    def _from_xform(self, x):
+        return x
+
+    def _is_valid(self, p):
+        return np.ones(p.shape, dtype=np.bool)
+
+
+class LogMapping(Mapping):
+    desc = 'log'
+
+    def _to_xform(self, p):
+        return np.log10(p)
+
+    def _from_xform(self, x):
+        return 10**x
+
+    def _is_valid(self, p):
+        return (p > 0)
+
+
+class NegLogMapping(Mapping):
+    desc = 'neg_log'
+
+    def _to_xform(self, p):
+        return np.log10(-p)
+
+    def _from_xform(self, x):
+        return -(10**x)
+
+    def _is_valid(self, p):
+        return (p < 0)
+
+
+class NinthRootMapping(Mapping):
+    desc = 'ninth_root'
+
+    def _to_xform(self, p):
+        return np.cbrt(np.cbrt(p))
+
+    def _from_xform(self, x):
+        return n**x
+
+    def _is_valid(self, p):
+        return np.ones(p.shape, dtype=np.bool)
+
+
+_mappings = {
+    'direct': DirectMapping,
+    'log': LogMapping,
+    'neg_log': NegLogMapping,
+    'ninth_root': NinthRootMapping,
+}
+
+def mapping_from_samples(name, maptype, phys_samples):
+    cls = _mappings[maptype]
+    return cls.from_samples(name, phys_samples)
+
+def mapping_from_dict(info):
+    maptype = str(info['maptype'])
+    cls = _mappings[maptype]
+    return cls.from_dict(info)
+
+
+def basic_load(datadir):
+    datadir = Path(datadir)
+    chunks = []
+    param_names = None
+
+    for item in datadir.glob('*.txt'):
+        if param_names is None:
+            with item.open('rt') as f:
+                first_line = f.readline()
+                assert first_line[0] == '#'
+                param_names = first_line.strip().split()[1:]
+
+        c = np.loadtxt(str(item))
+        if not c.size or c.ndim != 2:
+            continue
+
+        assert c.shape[1] > len(param_names)
+        chunks.append(c)
+
+    data = np.vstack(chunks)
+    return param_names, data
+
+
 class DomainRange(object):
-    n_params = len(hardcoded_params)
-    n_results = len(hardcoded_result_names)
+    n_params = None
+    n_results = None
     pmaps = None
     rmaps = None
 
     @classmethod
-    def from_samples(cls, phys_samples):
-        assert phys_samples.ndim == 2
-        assert phys_samples.shape[1] == (cls.n_params + cls.n_results)
-
+    def from_info_and_samples(cls, info, phys_samples):
         inst = cls()
+        inst.n_params = len(info['params'])
+        inst.n_results = len(info['results'])
         inst.pmaps = []
         inst.rmaps = []
 
-        for i in range(inst.n_params):
-            inst.pmaps.append(Mapping(hardcoded_params[i][0], phys_samples[:,i], hardcoded_params[i][1]))
+        assert phys_samples.ndim == 2
+        assert phys_samples.shape[1] == (inst.n_params + inst.n_results)
 
-        for i in range(inst.n_results):
-            inst.rmaps.append(Mapping(hardcoded_result_names[i], phys_samples[:,i+inst.n_params], True))
+        for i, pinfo in enumerate(info['params']):
+            inst.pmaps.append(mapping_from_samples(pinfo['name'], pinfo['maptype'], phys_samples[:,i]))
+
+        for i, rinfo in enumerate(info['results']):
+            inst.rmaps.append(mapping_from_samples(rinfo['name'], rinfo['maptype'], phys_samples[:,i+inst.n_params]))
 
         return inst
 
 
     @classmethod
-    def from_serialized(cls, info):
+    def from_serialized(cls, config_path):
+        with Path(config_path).open('rt') as f:
+            info = pytoml.load(f)
+
         inst = cls()
         inst.pmaps = []
         inst.rmaps = []
 
         for subinfo in info['params']:
-            inst.pmaps.append(Mapping.from_dict(subinfo))
+            inst.pmaps.append(mapping_from_dict(subinfo))
 
         for subinfo in info['results']:
-            inst.rmaps.append(Mapping.from_dict(subinfo))
+            inst.rmaps.append(mapping_from_dict(subinfo))
 
-        assert len(inst.pmaps) == cls.n_params
-        assert len(inst.rmaps) == cls.n_results
+        inst.n_params = len(inst.pmaps)
+        inst.n_results = len(inst.rmaps)
         return inst
-
-
-    @classmethod
-    def from_config(cls):
-        import pytoml
-
-        with open(config_path) as f:
-            cfg = pytoml.load(f)
-
-        return cls.from_serialized(cfg)
 
 
     def __repr__(self):
@@ -200,40 +252,21 @@ class DomainRange(object):
         info['results'] = [m.to_dict() for m in self.rmaps]
 
 
+    def load_and_normalize(self, datadir):
+        _, data = basic_load(datadir)
+        assert data.shape[1] == (self.n_params + self.n_results)
+        return SampleData(self, data)
+
+
 class SampleData(object):
     domain_range = None
     phys = None
     norm = None
 
-    def __init__(self, dirname):
-        chunks = []
+    def __init__(self, domain_range, phys_samples):
+        self.domain_range = domain_range
+        self.phys = phys_samples
 
-        for item in os.listdir(dirname):
-            if not item.endswith('.txt'):
-                continue
-
-            c = np.loadtxt(os.path.join(dirname, item))
-            if not c.size or c.ndim != 2:
-                continue
-
-            assert c.shape[1] == (DomainRange.n_params + DomainRange.n_results)
-            chunks.append(c)
-
-        self.phys = np.vstack(chunks)
-
-        # Sadly necessary postprocessing. 1. Sometimes Symphony gives {j,alpha}_V > 0;
-        # this should never happen with the range of thetas we explore.
-
-        w = self.phys[:,7] >= 0
-        print('Hack-clipping %d j_V values.' % w.sum())
-        self.phys[w,7] = np.nan
-        w = self.phys[:,8] >= 0
-        print('Hack-clipping %d alpha_V values.' % w.sum())
-        self.phys[w,8] = np.nan
-
-        # End of postprocessing.
-
-        self.domain_range = DomainRange.from_samples(self.phys)
         self.norm = np.empty_like(self.phys)
 
         for i in range(self.domain_range.n_params):
@@ -371,17 +404,16 @@ class NSModel(models.Sequential):
 
 
 class ApproximateSymphony(object):
-    def __init__(self, domain_range, model_dir):
-        self.domain_range = domain_range
-
+    def __init__(self, nn_dir):
+        self.domain_range = DomainRange.from_serialized(os.path.join(nn_dir, 'nn_config.toml'))
         self.models = []
 
         for stokes in 'iqv':
             for rttype in ('j', 'alpha'):
-                m = models.load_model(os.path.join(model_dir, '%s_%s.h5' % (rttype, stokes)),
+                m = models.load_model(os.path.join(nn_dir, '%s_%s.h5' % (rttype, stokes)),
                                       custom_objects = {'NSModel': NSModel})
                 m.result_index = len(self.models)
-                m.domain_range = domain_range
+                m.domain_range = self.domain_range
                 self.models.append(m)
 
         from . import STOKES_I, STOKES_Q, STOKES_U, STOKES_V, EMISSION, ABSORPTION

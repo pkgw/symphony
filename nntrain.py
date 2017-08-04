@@ -13,6 +13,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import argparse, sys, time
 from keras.layers import Dense
+from pwkit.io import Path
 from symphony import neuro
 
 
@@ -200,10 +201,10 @@ trainers = {
 }
 
 
-def load_data_and_train(datadir, rttype, stokes):
-    dr = neuro.DomainRange.from_config()
-    sd = neuro.SampleData(datadir)
-    sd.dr = dr
+def load_data_and_train(datadir, nndir, rttype, stokes):
+    cfg_path = Path(nndir) / 'nn_config.toml'
+    dr = neuro.DomainRange.from_serialized(cfg_path)
+    sd = dr.load_and_normalize(datadir)
 
     try:
         result_index, func = trainers[rttype, stokes]
@@ -236,25 +237,26 @@ def make_parser():
                     help='If plotting, plot residuals rather than absolute values.')
     ap.add_argument('datadir', type=str, metavar='DATADIR',
                     help='The path to the sample data directory.')
+    ap.add_argument('nndir', type=str, metavar='NNDIR',
+                    help='The path to the neural-net directory.')
     ap.add_argument('rttype', type=str, metavar='RTTYPE',
                     help='The RT coefficient type: j or alpha.')
     ap.add_argument('stokes', type=str, metavar='STOKES',
                     help='The Stokes parameter: i q or v.')
-    ap.add_argument('outpath', type=str, metavar='PATH',
-                    help='The path of the output HDF5 file.')
     return ap
 
 
 def main():
     args = make_parser().parse_args()
-    m = load_data_and_train(args.datadir, args.rttype, args.stokes)
+    m = load_data_and_train(args.datadir, args.nndir, args.rttype, args.stokes)
     print('Achieved MSE of %g in %.1f seconds for %s %s.' %
           (m.final_mse, m.training_wall_clock, args.rttype, args.stokes))
 
     if args.plot:
         page_results(m, residuals=args.residuals)
 
-    m.save(args.outpath, overwrite=True)
+    outpath = str(Path(args.nndir) / ('%s_%s.h5' % (args.rttype, args.stokes)))
+    m.save(outpath, overwrite=True)
 
 
 if __name__ == '__main__':
