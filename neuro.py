@@ -147,7 +147,7 @@ class NinthRootMapping(Mapping):
         return np.cbrt(np.cbrt(p))
 
     def _from_xform(self, x):
-        return n**x
+        return x**9
 
     def _is_valid(self, p):
         return np.ones(p.shape, dtype=np.bool)
