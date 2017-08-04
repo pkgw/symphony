@@ -479,9 +479,9 @@ class ApproximateSymphony(object):
 
         # Now apply the known scalings
 
-        result *= (n_e / hardcoded_ne_ref)
+        result *= (n_e[...,np.newaxis] / hardcoded_ne_ref)
 
-        freq_term = nu / hardcoded_nu_ref
+        freq_term = nu[...,np.newaxis] / hardcoded_nu_ref
         result[...,0::2] *= freq_term # j's scale directly with nu at fixed s
         result[...,1::2] /= freq_term # alpha's scale inversely with nu at fixed s
 
