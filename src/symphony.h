@@ -45,6 +45,7 @@ double compute_pkgw_pitchy(int mode,
                            double gamma_min,
                            double gamma_max,
                            double gamma_cutoff,
+                           double k,
                            char **error_message);
 
 double sample_synchrotron(int mode,
@@ -56,6 +57,7 @@ double sample_synchrotron(int mode,
                           double observer_angle,
                           double power_law_p,
                           double gamma,
+                          double k,
                           double n,
                           char **error_message);
 

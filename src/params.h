@@ -50,6 +50,9 @@ struct parameters
   double kappa;
   double kappa_width;
 
+  /* PKGW pitchy power law parameters */
+  double pppl_k;
+
   /*Choose if n-space peak is known, or if it must be found adaptively */
   int use_n_peak;
   double (*n_peak)(struct parameters *);

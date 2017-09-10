@@ -32,16 +32,21 @@ class Param(object):
         return '%s(%s)' % (self.name, 'log' if self.is_log else 'lin')
 
 
-parameters = [
+powerlaw_parameters = [
     Param('s', 0.07, 1e8, True),
     Param('theta', 0.001, 0.5 * np.pi, False),
     Param('p', 1.5, 4, False),
 ]
 
-n_params = len(parameters)
+pitchy_parameters = [
+    Param('s', 0.07, 1e8, True),
+    Param('theta', 0.001, 0.5 * np.pi, False),
+    Param('p', 1.5, 4, False),
+    Param('k', 0., 7, False),
+]
+
 n_calcs = 1024
 
-s_param_index = 0
 nu_ref = 1e9
 ne_ref = 1.0
 
@@ -51,35 +56,39 @@ def main():
 
     if distrib == 'powerlaw':
         func = symphony.compute_all_nontrivial
+        parameters = powerlaw_parameters
     elif distrib == 'pitchy':
         func = symphony.compute_all_nontrivial_pitchy
+        parameters = pitchy_parameters
     elif distrib == 'pitchy-jv':
-        def func(nu, B, n_e, theta, p, eat_errors=False):
-            return [symphony.compute_pitchy(symphony.EMISSION, symphony.STOKES_V, nu, B, n_e, theta, p, eat_errors=eat_errors)]
+        assert False, 'update to sync with new pitchy param'
+        #def func(nu, B, n_e, theta, p, eat_errors=False):
+        #    return [symphony.compute_pitchy(symphony.EMISSION, symphony.STOKES_V, nu, B, n_e, theta, p, eat_errors=eat_errors)]
     else:
         raise ValueError('bad distrib: %r' % (distrib,))
 
-    # TODO: might potentially have different parameter sets depending
     # on the distribution function being used.
 
+    n_params = len(parameters)
     pvals = np.random.uniform(size=(n_calcs, n_params))
     for i in range(n_params):
         pvals[:,i] = parameters[i].unit_to_phys(pvals[:,i])
 
     # Pre-compute this
 
-    B = 2 * np.pi * nu_ref * cgs.me * cgs.c / (cgs.e * pvals[:,s_param_index])
+    assert parameters[0].name == 's', 'first param must be s for kwargs code to work'
+    B = 2 * np.pi * nu_ref * cgs.me * cgs.c / (cgs.e * pvals[:,0])
 
     # We expect to time out and get killed before we finish all of our
     # calculations, which is why we line-buffer our output.
 
     with io.open(outpath, 'at', 1) as outfile:
         print('#', ' '.join(p.summary() for p in parameters), file=outfile)
+        kwargs = {'eat_errors': True}
 
         for i in range(n_calcs):
-            theta, p = pvals[i,1:]
-
-            info = func(nu_ref, B[i], ne_ref, theta, p, eat_errors=True)
+            kwargs.update((parameters[j].name, pvals[i,j]) for j in range(1, n_params))
+            info = func(nu_ref, B[i], ne_ref, **kwargs)
             if not np.all(np.isfinite(info)):
                 print('WARNING: got nonfinite answers for:', ' '.join('%.18e' % p for p in pvals[i]), file=sys.stderr)
                 sys.stderr.flush()

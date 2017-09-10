@@ -195,6 +195,7 @@ compute_pkgw_pitchy(int mode,
                     double gamma_min,
                     double gamma_max,
                     double gamma_cutoff,
+                    double k,
                     char **error_message)
 {
   gsl_error_handler_t *prev_handler;
@@ -218,6 +219,7 @@ compute_pkgw_pitchy(int mode,
   params.gamma_cutoff       = gamma_cutoff;
   params.kappa              = -1;
   params.kappa_width        = -1;
+  params.pppl_k             = k;
 
   if (error_message != NULL)
     *error_message = NULL; /* Initialize the user's error message. */
@@ -254,6 +256,7 @@ sample_synchrotron(int mode,
                    double observer_angle,
                    double power_law_p,
                    double gamma,
+                   double k,
                    double n,
                    char **error_message)
 {
@@ -277,6 +280,7 @@ sample_synchrotron(int mode,
   params.gamma_cutoff       = 1e7;
   params.kappa              = -1;
   params.kappa_width        = -1;
+  params.pppl_k             = k;
 
   if (is_pitchy)
     params.distribution = params.PKGW_PITCHY_POWER_LAW;

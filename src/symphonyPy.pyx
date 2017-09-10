@@ -16,11 +16,11 @@ def j_nu_py(double nu,
             double kappa,
             double kappa_width):
 
-  """Returns j_nu(nu, magnetic_field, electron_density, observer_angle, 
-                  distribution, polarization, theta_e, power_law_p, 
+  """Returns j_nu(nu, magnetic_field, electron_density, observer_angle,
+                  distribution, polarization, theta_e, power_law_p,
                   gamma_min, gamma_max, gamma_cutoff, kappa, kappa_width).
-     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER, 
-                                      symphonyPy.POWER_LAW, 
+     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER,
+                                      symphonyPy.POWER_LAW,
                                       symphonyPy.KAPPA_DIST
      Keys for Stokes parameter: symphonyPy.STOKES_I,
                                 symphonyPy.STOKES_Q,
@@ -51,10 +51,10 @@ def alpha_nu_py(double nu,
                 double kappa_width):
 
   """Returns alpha_nu(nu, magnetic_field, electron_density, observer_angle,
-                      distribution, polarization, theta_e, power_law_p, 
+                      distribution, polarization, theta_e, power_law_p,
                       gamma_min, gamma_max, gamma_cutoff, kappa, kappa_width).
-     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER, 
-                                      symphonyPy.POWER_LAW, 
+     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER,
+                                      symphonyPy.POWER_LAW,
                                       symphonyPy.KAPPA_DIST
      Keys for Stokes parameter: symphonyPy.STOKES_I,
                                 symphonyPy.STOKES_Q,
@@ -84,11 +84,11 @@ def j_nu_fit_py(double nu,
                 double kappa,
                 double kappa_width):
 
-  """Returns j_nu_fit(nu, magnetic_field, electron_density, observer_angle, 
-                    distribution, polarization, theta_e, power_law_p, 
+  """Returns j_nu_fit(nu, magnetic_field, electron_density, observer_angle,
+                    distribution, polarization, theta_e, power_law_p,
                     gamma_min, gamma_max, gamma_cutoff, kappa, kappa_width).
-     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER, 
-                                      symphonyPy.POWER_LAW, 
+     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER,
+                                      symphonyPy.POWER_LAW,
                                       symphonyPy.KAPPA_DIST
      Keys for Stokes parameter: symphonyPy.STOKES_I,
                                 symphonyPy.STOKES_Q,
@@ -114,11 +114,11 @@ def alpha_nu_fit_py(double nu,
                     double kappa,
                     double kappa_width):
 
-  """Returns alpha_nu_fit(nu, magnetic_field, electron_density, observer_angle, 
-                        distribution, polarization, theta_e, power_law_p, 
+  """Returns alpha_nu_fit(nu, magnetic_field, electron_density, observer_angle,
+                        distribution, polarization, theta_e, power_law_p,
                         gamma_min, gamma_max, gamma_cutoff, kappa, kappa_width).
-     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER, 
-                                      symphonyPy.POWER_LAW, 
+     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER,
+                                      symphonyPy.POWER_LAW,
                                       symphonyPy.KAPPA_DIST
      Keys for Stokes parameter: symphonyPy.STOKES_I,
                                 symphonyPy.STOKES_Q,
@@ -145,11 +145,11 @@ def rho_nu_fit_py(double nu,
                   double kappa=3.5,
                   double kappa_width=10.):
 
-  """Returns rho_nu_fit(nu, magnetic_field, electron_density, observer_angle, 
-                        distribution, polarization, theta_e, power_law_p, 
+  """Returns rho_nu_fit(nu, magnetic_field, electron_density, observer_angle,
+                        distribution, polarization, theta_e, power_law_p,
                         gamma_min, gamma_max, gamma_cutoff, kappa, kappa_width).
-     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER, 
-                                      symphonyPy.POWER_LAW, 
+     Keys for distribution functions: symphonyPy.MAXWELL_JUETTNER,
+                                      symphonyPy.POWER_LAW,
                                       symphonyPy.KAPPA_DIST
      Keys for Stokes parameter: symphonyPy.STOKES_I,
                                 symphonyPy.STOKES_Q,
@@ -171,12 +171,14 @@ def compute_pkgw_pitchy_py(int mode,
                            double power_law_p,
                            double gamma_min,
                            double gamma_max,
-                           double gamma_cutoff):
+                           double gamma_cutoff,
+                           double k,
+):
   cdef char* error_message = NULL
 
   result = compute_pkgw_pitchy(mode, polarization, nu, magnetic_field,
                                electron_density, observer_angle, power_law_p, gamma_min,
-                               gamma_max, gamma_cutoff, &error_message)
+                               gamma_max, gamma_cutoff, k, &error_message)
 
   if error_message:
     raise RuntimeError(error_message)
@@ -192,12 +194,14 @@ def sample_synchrotron_py(int mode,
                           double observer_angle,
                           double power_law_p,
                           double gamma,
-                          double n):
+                          double k,
+                          double n,
+):
   cdef char* error_message = NULL
 
   result = sample_synchrotron(mode, polarization, is_pitchy, nu, magnetic_field,
                               electron_density, observer_angle, power_law_p,
-                              gamma, n, &error_message)
+                              gamma, k, n, &error_message)
 
   if error_message:
     raise RuntimeError(error_message)

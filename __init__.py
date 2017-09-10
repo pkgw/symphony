@@ -114,6 +114,7 @@ def compute_pitchy(
         n_e = 1e3,
         theta = 1.,
         p = 2.,
+        k = 0., # default to match powerlaw
         gamma_min = 1.,
         gamma_max = 1000.,
         gamma_cutoff = 1e7,
@@ -137,6 +138,7 @@ def compute_pitchy(
             gamma_min, # powerlaw distribution: gamma_min
             gamma_max, # powerlaw distribution: gamma_max
             gamma_cutoff, # powerlaw distribution: gamma_cutoff
+            k, # pitchy: sin(alpha) exponent
         )
     except RuntimeError as e:
         if eat_errors:
@@ -152,13 +154,14 @@ def compute_all_nontrivial_pitchy(
         n_e = 1e3,
         theta = 1.,
         p = 2.,
+        k = 0.,
         gamma_min = 1.,
         gamma_max = 1000.,
         gamma_cutoff = 1e7,
         eat_errors = False,
 ):
     result = np.empty(6)
-    rest = (nu, B, n_e, theta, p, gamma_min, gamma_max, gamma_cutoff, eat_errors)
+    rest = (nu, B, n_e, theta, p, k, gamma_min, gamma_max, gamma_cutoff, eat_errors)
     result[0] = compute_pitchy(EMISSION, STOKES_I, *rest)
     result[1] = compute_pitchy(ABSORPTION, STOKES_I, *rest)
     result[2] = compute_pitchy(EMISSION, STOKES_Q, *rest)
