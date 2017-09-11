@@ -16,9 +16,9 @@ else
 fi
 
 case "$2" in
-    powerlaw) ;;
+    powerlaw|plfitacc) ;;
     *)
-	echo >&2 "second argument must be \"powerlaw\""
+	echo >&2 "second argument must be \"powerlaw\" or \"plfitacc\""
 	exit 1 ;;
 esac
 

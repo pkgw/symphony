@@ -38,6 +38,12 @@ powerlaw_parameters = [
     Param('p', 1.5, 4, False),
 ]
 
+plfitacc_parameters = [
+    Param('s', 0.07, 1e7, True), # bigger range of s
+    Param('theta', 0.001, 0.5 * np.pi, False),
+    Param('p', 1.5, 4, False),
+]
+
 n_calcs = 1024
 
 nu_ref = 1e9
@@ -50,6 +56,12 @@ def main():
     if distrib == 'powerlaw':
         func = symphony.compute_all_nontrivial
         parameters = powerlaw_parameters
+    elif distrib == 'plfitacc':
+        def func(nu, B, ne, **kwargs):
+            full = symphony.compute_all_nontrivial(nu, B, ne, approximate=False, **kwargs)
+            fit = symphony.compute_all_nontrivial(nu, B, ne, approximate=True, **kwargs)
+            return fit / full
+        parameters = plfitacc_parameters
     else:
         raise ValueError('bad distrib: %r' % (distrib,))
 
