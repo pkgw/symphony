@@ -93,7 +93,7 @@ def main():
                 print('WARNING: got nonfinite answers for:', ' '.join('%.18e' % p for p in pvals[i]), file=sys.stderr)
                 sys.stderr.flush()
             vec = list(pvals[i]) + list(info)
-            print('\t'.join('%g' % v for v in vec), file=outfile)
+            print(' '.join('%-+24.16e' % v for v in vec), file=outfile)
 
 
 if __name__ == '__main__':
