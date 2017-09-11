@@ -16,8 +16,8 @@ from .symphonyPy import STOKES_I, STOKES_Q, STOKES_U, STOKES_V
 EMISSION, ABSORPTION = 11, 10 # compat with symphonyPy
 
 default_gamma_min = 1.
-default_gamma_max = 1e5
-default_gamma_cutoff = 1e3
+default_gamma_max = 1e12
+default_gamma_cutoff = 1e10
 
 def compute_coefficient(
         rttype = EMISSION,
