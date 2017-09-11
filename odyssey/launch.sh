@@ -16,9 +16,9 @@ else
 fi
 
 case "$2" in
-    powerlaw|pitchy|pitchy-jv) ;;
+    powerlaw) ;;
     *)
-	echo >&2 "second argument must be \"powerlaw\" or \"pitchy\" or \"pitchy-jv\""
+	echo >&2 "second argument must be \"powerlaw\""
 	exit 1 ;;
 esac
 

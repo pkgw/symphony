@@ -38,13 +38,6 @@ powerlaw_parameters = [
     Param('p', 1.5, 4, False),
 ]
 
-pitchy_parameters = [
-    Param('s', 0.07, 1e8, True),
-    Param('theta', 0.001, 0.5 * np.pi, False),
-    Param('p', 1.5, 4, False),
-    Param('k', 0., 7, False),
-]
-
 n_calcs = 1024
 
 nu_ref = 1e9
@@ -57,13 +50,6 @@ def main():
     if distrib == 'powerlaw':
         func = symphony.compute_all_nontrivial
         parameters = powerlaw_parameters
-    elif distrib == 'pitchy':
-        func = symphony.compute_all_nontrivial_pitchy
-        parameters = pitchy_parameters
-    elif distrib == 'pitchy-jv':
-        assert False, 'update to sync with new pitchy param'
-        #def func(nu, B, n_e, theta, p, eat_errors=False):
-        #    return [symphony.compute_pitchy(symphony.EMISSION, symphony.STOKES_V, nu, B, n_e, theta, p, eat_errors=eat_errors)]
     else:
         raise ValueError('bad distrib: %r' % (distrib,))
 
