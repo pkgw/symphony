@@ -171,3 +171,6 @@ STOKES_I         = 15
 STOKES_Q         = 16
 STOKES_U         = 17
 STOKES_V         = 18
+
+ABSORPTIVITY = 10
+EMISSIVITY = 11
