@@ -33,7 +33,7 @@ class Param(object):
 
 
 powerlaw_parameters = [
-    Param('s', 0.07, 1e8, True),
+    Param('s', 0.07, 1e4, True),
     Param('theta', 0.001, 0.5 * np.pi, False),
     Param('p', 1.5, 4, False),
 ]
