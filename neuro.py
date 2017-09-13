@@ -170,7 +170,7 @@ def mapping_from_dict(info):
     return cls.from_dict(info)
 
 
-def basic_load(datadir):
+def basic_load(datadir, drop_metadata=True):
     datadir = Path(datadir)
     chunks = []
     param_names = None
@@ -190,6 +190,18 @@ def basic_load(datadir):
         chunks.append(c)
 
     data = np.vstack(chunks)
+
+    if drop_metadata:
+        # Ignore `!foo` columns, which are naively interpreted as parameters
+        # but are actually output info (e.g. timings) that may not be of
+        # interest.
+
+        while param_names[-1][0] == '!':
+            n = len(param_names) - 1
+            data[:,n:-1] = data[:,n+1:]
+            data = data[:,:-1]
+            del param_names[-1]
+
     return param_names, data
 
 

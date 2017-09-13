@@ -209,7 +209,7 @@ def load_data_and_train(datadir, nndir, rttype, stokes):
     try:
         result_index, func = trainers[rttype, stokes]
     except:
-        raise Exception('no training info for rttype=%r, stoke=%r' % (args.rttype, args.stokes))
+        raise Exception('no training info for rttype=%r, stokes=%r' % (rttype, stokes))
 
     m = neuro.NSModel()
     m.ns_setup(result_index, sd)
