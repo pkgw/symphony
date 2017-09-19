@@ -62,8 +62,18 @@ def main():
         parameters = pitchy_parameters
     elif distrib == 'pitchy-jv':
         assert False, 'update to sync with new pitchy param'
-        #def func(nu, B, n_e, theta, p, eat_errors=False):
-        #    return [symphony.compute_pitchy(symphony.EMISSION, symphony.STOKES_V, nu, B, n_e, theta, p, eat_errors=eat_errors)]
+    elif distrib == 'plfaraday':
+        from pylib import heyvaerts
+
+        def func(nu, B, ne, theta=None, p=None, eat_errors=None):
+            s = 2 * np.pi * nu * cgs.me * cgs.c / (B * cgs.e)
+            omega_p = np.sqrt(4 * np.pi * ne * cgs.e**2 / cgs.me)
+            pl = heyvaerts.PowerLawDistribution(p)
+            rho_v = pl.f_nrqr(s=s, theta=theta, omega=2*np.pi*nu, omega_p=omega_p)
+            rho_q = pl.h_nrqr(s=s, theta=theta, omega=2*np.pi*nu, omega_p=omega_p)
+            return [rho_q, rho_v]
+
+        parameters = powerlaw_parameters
     else:
         raise ValueError('bad distrib: %r' % (distrib,))
 

@@ -16,9 +16,9 @@ else
 fi
 
 case "$2" in
-    powerlaw|pitchy|pitchy-jv) ;;
+    powerlaw|pitchy|pitchy-jv|plfaraday) ;;
     *)
-	echo >&2 "second argument must be \"powerlaw\" or \"pitchy\" or \"pitchy-jv\""
+	echo >&2 "distribution type \"$2\" not recognized"
 	exit 1 ;;
 esac
 
