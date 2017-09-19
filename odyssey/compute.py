@@ -68,7 +68,7 @@ def main():
         def func(nu, B, ne, theta=None, p=None, eat_errors=None):
             s = 2 * np.pi * nu * cgs.me * cgs.c / (B * cgs.e)
             omega_p = np.sqrt(4 * np.pi * ne * cgs.e**2 / cgs.me)
-            pl = heyvaerts.PowerLawDistribution(p)
+            pl = heyvaerts.CutoffGammaSpacePowerLawDistribution(1.0, p)
             rho_v = pl.f_nrqr(s=s, theta=theta, omega=2*np.pi*nu, omega_p=omega_p)
             rho_q = pl.h_nrqr(s=s, theta=theta, omega=2*np.pi*nu, omega_p=omega_p)
             return [rho_q, rho_v]
