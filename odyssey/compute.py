@@ -39,10 +39,12 @@ powerlaw_parameters = [
 ]
 
 pitchy_parameters = [
-    Param('s', 0.07, 1e8, True),
+    # These have been tuned to match the values that occur in the DG83 Jovian
+    # model.
+    Param('s', 5., 5e7, True),
     Param('theta', 0.001, 0.5 * np.pi, False),
-    Param('p', 1.5, 4, False),
-    Param('k', 0., 7, False),
+    Param('p', 1.5, 7, False),
+    Param('k', 0., 9, False),
 ]
 
 n_calcs = 1024
@@ -74,6 +76,18 @@ def main():
             return [rho_q, rho_v]
 
         parameters = powerlaw_parameters
+    elif distrib == 'pitchy-f':
+        from pylib import heyvaerts
+
+        def func(nu, B, ne, theta=None, p=None, k=None, eat_errors=None):
+            s = 2 * np.pi * nu * cgs.me * cgs.c / (B * cgs.e)
+            omega_p = np.sqrt(4 * np.pi * ne * cgs.e**2 / cgs.me)
+            pd = heyvaerts.PitchyDistribution(p, k)
+            rho_v = pd.f_nrqr(s=s, theta=theta, omega=2*np.pi*nu, omega_p=omega_p)
+            rho_q = pd.h_nrqr(s=s, theta=theta, omega=2*np.pi*nu, omega_p=omega_p)
+            return [rho_q, rho_v]
+
+        parameters = pitchy_parameters
     else:
         raise ValueError('bad distrib: %r' % (distrib,))
 

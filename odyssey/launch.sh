@@ -19,7 +19,7 @@ else
 fi
 
 case "$2" in
-    powerlaw|pitchy|pitchy-jv|plfaraday) ;;
+    powerlaw|pitchy|pitchy-jv|plfaraday|pitchy-f) ;;
     *)
 	echo >&2 "distribution type \"$2\" not recognized"
 	exit 1 ;;
