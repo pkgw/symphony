@@ -3,13 +3,16 @@
 if [ "$1" = test ] ; then
     array_spec=0-1
     time_lim=1
+    partition=interact
     set -x
 elif [ "$1" = prod ] ; then
     array_spec=0-1023
     time_lim=60
+    partition=serial_requeue
 elif [ "$1" = med ] ; then
     array_spec=0-128
     time_lim=10
+    partition=serial_requeue
 else
     echo >&2 "first argument must be either \"test\" or \"prod\" or \"med\""
     exit 1
@@ -40,7 +43,7 @@ exec sbatch \
     --mem=512 \
     -N 1 \
     -n 1 \
-    -p serial_requeue \
+    -p $partition \
     -t $time_lim \
     -o '%A.log' \
     --open-mode=append \
