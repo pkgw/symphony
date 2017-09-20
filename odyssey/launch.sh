@@ -1,15 +1,18 @@
 #!/bin/bash
 
 if [ "$1" = test ] ; then
+    # 0.05 cpu-hours
     array_spec=0-1
     time_lim=1
     partition=interact
     set -x
 elif [ "$1" = prod ] ; then
+    # ~1000 cpu-hours
     array_spec=0-1023
     time_lim=60
     partition=serial_requeue
 elif [ "$1" = med ] ; then
+    # ~20 cpu-hours
     array_spec=0-128
     time_lim=10
     partition=serial_requeue
